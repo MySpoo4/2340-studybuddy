@@ -1,5 +1,7 @@
 """
 URL configuration for studybuddy project.
+from django.urls import path
+from . import views
 
 The `urlpatterns` list routes URLs to views. For more information please see:
     https://docs.djangoproject.com/en/5.0/topics/http/urls/
@@ -16,8 +18,15 @@ Including another URLconf
 """
 
 from django.contrib import admin
-from django.urls import path
+from django.urls import path, include
+from django.conf.urls.static import static
+from django.conf import settings
 
 urlpatterns = [
     path("admin/", admin.site.urls),
+    path("", include("home.urls")),
+    path("", include("core.urls")),
+    path("accounts/", include("accounts.urls")),
 ]
+
+urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -1,0 +1,41 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <script>
+      // Immediately set the sidebar state on the <html> element to prevent a flash of the wrong state.
+      try {
+        const state = localStorage.getItem("sidebarState") || "expanded";
+        document.documentElement.dataset.sidebarState = state;
+      } catch (e) {}
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{% block title %}StudyBuddy{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              primary: "hsl(262.1 83.3% 57.8%)", // Example color
+              accent: "hsl(314.1 83.3% 57.8%)", // Example color
+            },
+          },
+        },
+        plugins: [
+          tailwind.plugin(function ({ addVariant }) {
+            addVariant("sidebar-collapsed", '[data-sidebar-state="collapsed"] &');
+          }),
+        ],
+      };
+    </script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+  </head>
+  <body class="bg-background text-foreground">
+    {% block content %}{% endblock %}
+    <script>
+      lucide.createIcons();
+    </script>
+  </body>
+</html>

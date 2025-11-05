@@ -1,0 +1,65 @@
+{% extends "core/base.html" %}
+
+{% block page_title %}Your Profile{% endblock %}
+
+{% block page_content %}
+<div class="mx-auto max-w-2xl">
+  <div class="rounded-lg border bg-white shadow-sm">
+    <div class="flex items-center justify-between p-6">
+      <div>
+        <h3 class="text-2xl font-semibold leading-none tracking-tight">{{ user.get_full_name|default:user.username }}</h3>
+        <p class="text-sm text-gray-500">Your personal profile and study preferences.</p>
+      </div>
+      <a href="{% url 'accounts.edit_profile' %}" class="inline-flex h-10 items-center justify-center rounded-md border border-gray-300 bg-white px-4 text-sm font-medium shadow-sm hover:bg-gray-100">
+        Edit Profile
+      </a>
+    </div>
+    <div class="p-6 pt-0">
+      <div class="space-y-6">
+        
+        <div class="grid gap-4 sm:grid-cols-2">
+          <div>
+            <h4 class="text-sm font-medium text-gray-500">University</h4>
+            <p class="text-base">{{ profile.university|default:"Not set" }}</p>
+          </div>
+          <div>
+            <h4 class="text-sm font-medium text-gray-500">Major</h4>
+            <p class="text-base">{{ profile.major|default:"Not set" }}</p>
+          </div>
+          <div>
+            <h4 class="text-sm font-medium text-gray-500">Year of Study</h4>
+            <p class="text-base">{% if profile.year_of_study %}Year {{ profile.year_of_study }}{% else %}Not set{% endif %}</p>
+          </div>
+        </div>
+
+        <div>
+          <h4 class="text-sm font-medium text-gray-500">Bio</h4>
+          <p class="text-base">{{ profile.bio|default:"No bio yet." }}</p>
+        </div>
+
+        <div>
+          <h4 class="text-sm font-medium text-gray-500">Courses</h4>
+          <div class="mt-2 flex flex-wrap gap-2">
+            {% for course in profile.courses.all %}
+              <span class="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-semibold">{{ course.code }}</span>
+            {% empty %}
+              <p class="text-sm text-gray-500">No courses added yet.</p>
+            {% endfor %}
+          </div>
+        </div>
+
+        <div>
+          <h4 class="text-sm font-medium text-gray-500">Study Preferences</h4>
+          <div class="mt-2 flex flex-wrap gap-2">
+            {% for pref in profile.study_preferences.all %}
+              <span class="inline-flex items-center rounded-full bg-purple-100 px-3 py-1 text-sm font-medium text-purple-700">{{ pref.name }}</span>
+            {% empty %}
+              <p class="text-sm text-gray-500">No preferences set yet.</p>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

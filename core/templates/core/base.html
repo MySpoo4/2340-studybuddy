@@ -1,0 +1,96 @@
+{% extends "home/base.html" %} {% block content %}
+<div id="app-container" class="flex h-screen bg-gray-100" data-sidebar-state="">
+  <!-- Sidebar -->
+  <aside id="sidebar" class="flex flex-col bg-white transition-all duration-300 ease-in-out w-64 sidebar-collapsed:w-16">
+    <div class="flex h-14 items-center gap-2 px-4">
+      <div class="flex h-full w-10 flex-shrink-0 items-center justify-center">
+        <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-r from-purple-600 to-pink-600">
+        <i data-lucide="heart" class="h-6 w-6 text-white"></i>
+        </div>
+      </div>
+      <h1 class="text-xl font-bold sidebar-text whitespace-nowrap sidebar-collapsed:hidden">StudyBuddy</h1>
+    </div>
+
+    <nav class="flex-1 space-y-2 p-2 sidebar-collapsed:p-3">
+      <a href="{% url 'core.swipe' %}" class="flex h-10 items-center gap-3 rounded-lg px-3 text-gray-600 hover:bg-gray-100 {% if request.resolver_match.url_name == 'core.swipe' %}bg-purple-100 text-purple-700{% endif %} sidebar-collapsed:px-2">
+        <i data-lucide="compass" class="h-5 w-5 flex-shrink-0"></i>
+        <span class="sidebar-text whitespace-nowrap sidebar-collapsed:hidden">Discover</span>
+      </a>
+      <a href="#" class="flex h-10 items-center gap-3 rounded-lg px-3 text-gray-600 hover:bg-gray-100 sidebar-collapsed:px-2">
+        <i data-lucide="heart" class="h-5 w-5 flex-shrink-0"></i>
+        <span class="sidebar-text whitespace-nowrap sidebar-collapsed:hidden">Matches</span>
+      </a>
+      <a href="#" class="flex h-10 items-center gap-3 rounded-lg px-3 text-gray-600 hover:bg-gray-100 sidebar-collapsed:px-2">
+        <i data-lucide="message-square" class="h-5 w-5 flex-shrink-0"></i>
+        <span class="sidebar-text whitespace-nowrap sidebar-collapsed:hidden">Messages</span>
+      </a>
+      <a href="{% url 'accounts.profile' %}" class="flex h-10 items-center gap-3 rounded-lg px-3 text-gray-600 hover:bg-gray-100 {% if request.resolver_match.view_name == 'accounts:profile' or request.resolver_match.url_name == 'accounts.profile' %}bg-purple-100 text-purple-700{% endif %} sidebar-collapsed:px-2">
+        <i data-lucide="user" class="h-5 w-5 flex-shrink-0"></i>
+        <span class="sidebar-text whitespace-nowrap sidebar-collapsed:hidden">Profile</span>
+      </a>
+    </nav>
+
+    <div class="border-t p-2 sidebar-collapsed:p-3">
+      <form action="{% url 'accounts.logout' %}" method="post">
+        {% csrf_token %}
+        <button type="submit" class="flex h-10 w-full items-center gap-3 rounded-lg px-3 text-gray-600 hover:bg-gray-100 sidebar-collapsed:px-2">
+          <i data-lucide="log-out" class="h-5 w-5 flex-shrink-0"></i>
+          <span class="sidebar-text whitespace-nowrap sidebar-collapsed:hidden">Logout</span>
+        </button>
+      </form>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <div class="flex flex-1 flex-col">
+    <!-- Header -->
+    <header class="flex h-14 items-center gap-4 border-b bg-white px-6">
+      <button id="sidebar-toggle" class="rounded-full p-1 text-gray-600 hover:bg-gray-100">
+        <i data-lucide="panel-left" class="h-5 w-5" id="sidebar-toggle-icon"></i>
+        <span class="sr-only">Toggle sidebar</span>
+      </button>
+      <h1 class="text-xl font-semibold">{% block page_title %}{% endblock %}</h1>
+    </header>
+
+    <!-- Page Content -->
+    <main class="flex-1 overflow-y-auto p-8">
+      {% block page_content %}{% endblock %}
+    </main>
+  </div>
+</div>
+
+<script>
+  // This script now runs after the DOM is loaded to set up interactions
+  document.addEventListener('DOMContentLoaded', function () {
+    const htmlElement = document.documentElement;
+    const appContainer = document.getElementById('app-container');
+    const toggleButton = document.getElementById('sidebar-toggle');
+
+    const setSidebarState = (state) => {
+      localStorage.setItem('sidebarState', state);
+      // Sync both the html and app-container for different CSS selectors
+      htmlElement.dataset.sidebarState = state;
+      appContainer.dataset.sidebarState = state;
+      
+      // Change the icon based on the state
+      const icon = document.getElementById('sidebar-toggle-icon');
+      icon.setAttribute('data-lucide', state === 'collapsed' ? 'panel-right' : 'panel-left');
+      lucide.createIcons(); // Re-render the icon
+    };
+
+    toggleButton.addEventListener('click', () => {
+      const currentState = htmlElement.dataset.sidebarState;
+      const newState = currentState === 'collapsed' ? 'expanded' : 'collapsed';
+      setSidebarState(newState);
+    });
+
+    // Sync the app container's state with the one set on the HTML element on load
+    appContainer.dataset.sidebarState = htmlElement.dataset.sidebarState;
+
+    // Initial icon setup on page load
+    const initialIcon = document.getElementById('sidebar-toggle-icon');
+    initialIcon.setAttribute('data-lucide', appContainer.dataset.sidebarState === 'collapsed' ? 'panel-right' : 'panel-left');
+    lucide.createIcons();
+  });
+</script>
+{% endblock %}

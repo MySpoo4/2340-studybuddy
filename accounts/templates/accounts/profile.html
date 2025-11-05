@@ -1,0 +1,121 @@
+{% extends "accounts/base_accounts.html" %}
+
+{% block page_title %}Your Profile{% endblock %}
+
+{% block page_content %}
+<div class="mx-auto max-w-2xl">
+  <div class="rounded-lg border bg-white shadow-sm">
+    <div class="p-6">
+      <h3 class="text-2xl font-semibold leading-none tracking-tight">Your Profile</h3>
+      <p class="text-sm text-gray-500">Complete your profile to find the perfect study partners.</p>
+    </div>
+    <div class="p-6 pt-0">
+      <form method="post" class="space-y-6">
+        {% csrf_token %}
+        <div class="space-y-2">
+          <label for="full_name" class="text-sm font-medium leading-none">Full Name</label>
+          <input type="text" id="full_name" name="full_name" value="{{ user.get_full_name }}" required class="flex h-10 w-full rounded-md border border-gray-300 bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500" />
+        </div>
+
+        <div class="space-y-2">
+          <label for="university" class="text-sm font-medium leading-none">University</label>
+          <input type="text" id="university" name="university" placeholder="e.g., Stanford University" class="flex h-10 w-full rounded-md border border-gray-300 bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500" />
+        </div>
+
+        <div class="grid gap-4 sm:grid-cols-2">
+          <div class="space-y-2">
+            <label for="major" class="text-sm font-medium leading-none">Major</label>
+            <input type="text" id="major" name="major" placeholder="e.g., Computer Science" class="flex h-10 w-full rounded-md border border-gray-300 bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500" />
+          </div>
+
+          <div class="space-y-2">
+            <label for="year" class="text-sm font-medium leading-none">Year of Study</label>
+            <select id="year" name="year" class="flex h-10 w-full items-center justify-between rounded-md border border-gray-300 bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500">
+              <option value="1">Year 1</option>
+              <option value="2">Year 2</option>
+              <option value="3">Year 3</option>
+              <option value="4">Year 4</option>
+              <option value="5">Year 5+</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="space-y-2">
+          <label for="bio" class="text-sm font-medium leading-none">Bio</label>
+          <textarea id="bio" name="bio" placeholder="Tell others about your study goals and preferences..." rows="4" class="flex min-h-[80px] w-full rounded-md border border-gray-300 bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"></textarea>
+        </div>
+
+        <div class="space-y-2">
+          <label class="text-sm font-medium leading-none">Courses</label>
+          <select class="flex h-10 w-full items-center justify-between rounded-md border border-gray-300 bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500">
+            <option value="">Add courses</option>
+            <!-- Course options would be populated here from the database -->
+          </select>
+          <div class="mt-2 flex flex-wrap gap-2">
+            <!-- Example of selected courses -->
+            <span class="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-semibold">
+              CS 1331
+              <button type="button" class="flex-shrink-0">
+                <i data-lucide="x" class="h-3 w-3"></i>
+              </button>
+            </span>
+            <span class="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-semibold">
+              MATH 1554
+              <button type="button" class="flex-shrink-0">
+                <i data-lucide="x" class="h-3 w-3"></i>
+              </button>
+            </span>
+          </div>
+        </div>
+
+        <div class="space-y-2">
+          <label class="text-sm font-medium leading-none">Study Preferences</label>
+          <div class="flex flex-wrap gap-2">
+            <!-- These would be dynamically styled based on user's choices -->
+            <span class="cursor-pointer rounded-full border bg-purple-600 px-3 py-1 text-sm font-medium text-white">Quiet Study</span>
+            <span class="cursor-pointer rounded-full border border-gray-300 bg-white px-3 py-1 text-sm font-medium hover:bg-gray-100">Group Study</span>
+            <span class="cursor-pointer rounded-full border bg-purple-600 px-3 py-1 text-sm font-medium text-white">Library</span>
+            <span class="cursor-pointer rounded-full border border-gray-300 bg-white px-3 py-1 text-sm font-medium hover:bg-gray-100">Coffee Shop</span>
+            <span class="cursor-pointer rounded-full border border-gray-300 bg-white px-3 py-1 text-sm font-medium hover:bg-gray-100">Online</span>
+          </div>
+        </div>
+
+        <div class="space-y-4 border-t pt-6">
+          <div class="space-y-2">
+            <label class="flex items-center gap-2 text-sm font-medium">
+              <i data-lucide="map-pin" class="h-4 w-4"></i>
+              Campus Location / Study Spot
+            </label>
+            <p class="text-sm text-gray-500">Set your location to find nearby study buddies.</p>
+
+            <div class="flex gap-2">
+              <input placeholder="Enter address or location" class="flex h-10 w-full rounded-md border border-gray-300 bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500" />
+              <button type="button" class="inline-flex h-10 items-center justify-center whitespace-nowrap rounded-md border border-gray-300 bg-transparent px-4 py-2 text-sm font-medium hover:bg-gray-100">Set</button>
+            </div>
+
+            <div class="flex gap-2">
+              <button type="button" class="inline-flex h-10 items-center justify-center gap-2 whitespace-nowrap rounded-md border border-gray-300 bg-transparent px-4 py-2 text-sm font-medium hover:bg-gray-100">
+                <i data-lucide="navigation" class="h-4 w-4"></i>
+                Use Current Location
+              </button>
+            </div>
+          </div>
+
+          <div class="space-y-2">
+            <label for="search_radius" class="text-sm font-medium"> Search Radius: <span id="radius-value">5</span> km </label>
+            <p class="text-sm text-gray-500">How far you're willing to travel to meet study buddies.</p>
+            <input id="search_radius" type="range" min="1" max="50" value="5" class="h-2 w-full cursor-pointer appearance-none rounded-lg bg-gray-200 accent-purple-600" oninput="document.getElementById('radius-value').textContent = this.value" />
+            <div class="flex justify-between text-xs text-gray-500">
+              <span>1 km</span>
+              <span>25 km</span>
+              <span>50 km</span>
+            </div>
+          </div>
+        </div>
+
+        <button type="submit" class="inline-flex h-11 w-full items-center justify-center rounded-md bg-purple-600 px-8 text-sm font-medium text-white hover:bg-purple-700">Save Profile</button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

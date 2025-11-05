@@ -1,0 +1,41 @@
+{% extends "home/base.html" %} {% block content %}
+<div class="flex min-h-screen items-center justify-center bg-gradient-to-br from-primary/5 via-background to-accent/5 p-4">
+  <div class="w-full max-w-md rounded-lg border border-gray-200 bg-white shadow-lg">
+    <div class="space-y-1 p-6 text-center">
+      <div class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-r from-purple-600 to-pink-600">
+        <i data-lucide="heart" class="h-8 w-8 text-white"></i>
+      </div>
+      <h1 class="text-2xl font-bold">Welcome Back</h1>
+      <p class="text-gray-500">Sign in to continue matching with study buddies</p>
+    </div>
+    <div class="p-6 pt-0">
+      <form method="post" class="space-y-4">
+        {% csrf_token %}
+        <!-- Non-field errors -->
+        {% if form.non_field_errors %}
+          <div class="rounded-md bg-red-50 p-4 text-sm text-red-700">
+            {% for error in form.non_field_errors %} {{ error }} {% endfor %}
+          </div>
+        {% endif %}
+
+        <!-- Form fields -->
+        {% for field in form %}
+        <div class="space-y-2">
+          <label for="{{ field.id_for_label }}" class="text-sm font-medium leading-none">{{ field.label }}</label>
+          <input type="{{ field.field.widget.input_type }}" name="{{ field.name }}" id="{{ field.id_for_label }}" class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2" placeholder="{{ field.field.widget.attrs.placeholder|default:'' }}" />
+          {% if field.errors %}
+          <div class="text-sm text-red-500">{{ field.errors.as_text }}</div>
+          {% endif %}
+        </div>
+        {% endfor %}
+
+        <button type="submit" class="w-full h-11 rounded-md bg-purple-600 px-8 text-white transition-colors hover:bg-purple-700">Sign In</button>
+
+        <div class="text-center text-sm">
+          <a href="{% url 'accounts.signup' %}" class="text-primary hover:underline"> Don't have an account? Sign up </a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

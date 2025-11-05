@@ -1,0 +1,226 @@
+{% extends "accounts/base_accounts.html" %}
+
+{% block page_title %}Edit Profile{% endblock %}
+
+{% block page_content %}
+<div class="mx-auto max-w-2xl">
+  <div class="rounded-lg border bg-white shadow-sm">
+    <div class="p-6">
+      <h3 class="text-2xl font-semibold leading-none tracking-tight">Edit Your Profile</h3>
+      <p class="text-sm text-gray-500">Update your information to improve your matches.</p>
+    </div>
+    <div class="p-6 pt-0">
+      <form method="post" action="{% url 'accounts.edit_profile' %}">
+        {% csrf_token %}
+        <div class="space-y-6">
+          <div class="space-y-2">
+            <label for="full_name" class="text-sm font-medium leading-none">Full Name</label>
+            <input type="text" id="full_name" name="full_name" value="{{ user.get_full_name }}" required class="flex h-10 w-full rounded-md border border-gray-300 bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500" />
+          </div>
+
+          <div class="space-y-2">
+            <label for="university" class="text-sm font-medium leading-none">University</label>
+            <input type="text" id="university" name="university" value="{{ profile.university }}" placeholder="e.g., Stanford University" class="flex h-10 w-full rounded-md border border-gray-300 bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500" />
+          </div>
+
+          <div class="grid gap-4 sm:grid-cols-2">
+            <div class="space-y-2">
+              <label for="major" class="text-sm font-medium leading-none">Major</label>
+              <input type="text" id="major" name="major" value="{{ profile.major }}" placeholder="e.g., Computer Science" class="flex h-10 w-full rounded-md border border-gray-300 bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500" />
+            </div>
+
+            <div class="space-y-2">
+              <label for="year" class="text-sm font-medium leading-none">Year of Study</label>
+              <select id="year" name="year" class="flex h-10 w-full items-center justify-between rounded-md border border-gray-300 bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500">
+                <option value="" {% if not profile.year_of_study %}selected{% endif %}>Select Year</option>
+                <option value="1" {% if profile.year_of_study == 1 %}selected{% endif %}>Year 1</option>
+                <option value="2" {% if profile.year_of_study == 2 %}selected{% endif %}>Year 2</option>
+                <option value="3" {% if profile.year_of_study == 3 %}selected{% endif %}>Year 3</option>
+                <option value="4" {% if profile.year_of_study == 4 %}selected{% endif %}>Year 4</option>
+                <option value="5" {% if profile.year_of_study == 5 %}selected{% endif %}>Year 5+</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="space-y-2">
+            <label for="bio" class="text-sm font-medium leading-none">Bio</label>
+            <textarea id="bio" name="bio" placeholder="Tell others about your study goals and preferences..." rows="4" class="flex min-h-[80px] w-full rounded-md border border-gray-300 bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500">{{ profile.bio }}</textarea>
+          </div>
+
+          <div class="space-y-2">
+            <label class="text-sm font-medium leading-none">Courses</label>
+            <div class="relative">
+              <input type="text" id="course-search" placeholder="Search and add a course..." class="flex h-10 w-full rounded-md border border-gray-300 bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500" autocomplete="off">
+              <div id="course-results" class="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-md border bg-white text-base shadow-lg focus:outline-none sm:text-sm hidden">
+                <!-- Results will be populated by JS -->
+              </div>
+            </div>
+
+            <div id="selected-courses-container" class="mt-2 flex flex-wrap gap-2">
+              {% for course in profile.courses.all %}
+                <div class="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-semibold">
+                  <span>{{ course.code }}</span>
+                  <input type="hidden" name="courses" value="{{ course.id }}">
+                  <button type="button" class="flex-shrink-0" onclick="this.parentElement.remove()">
+                    <i data-lucide="x" class="h-3 w-3"></i>
+                  </button>
+                </div>
+              {% endfor %}
+            </div>
+          </div>
+
+          <div class="space-y-2">
+            <label class="text-sm font-medium leading-none">Study Preferences</label>
+            <div id="study-preferences-container" class="flex flex-wrap gap-2">
+              {% for pref in all_study_preferences %}
+                <label class="cursor-pointer">
+                  <input type="checkbox" name="study_preferences" value="{{ pref.id }}" class="peer sr-only" {% if pref in profile.study_preferences.all %}checked{% endif %}>
+                  <span class="rounded-full border px-3 py-1 text-sm font-medium
+                    {% if pref in profile.study_preferences.all %}bg-purple-600 text-white border-purple-600{% else %}border-gray-300 bg-white hover:bg-gray-100{% endif %}
+                    peer-checked:bg-purple-600 peer-checked:text-white peer-checked:border-purple-600">
+                    {{ pref.name }}</span>
+                </label>
+              {% endfor %}
+            </div>
+          </div>
+
+          <div class="space-y-4 border-t pt-6">
+            <div class="space-y-2">
+              <label class="flex items-center gap-2 text-sm font-medium">
+                <i data-lucide="map-pin" class="h-4 w-4"></i>
+                Campus Location / Study Spot
+              </label>
+              <p class="text-sm text-gray-500">Set your location to find nearby study buddies.</p>
+
+              <div class="flex gap-2">
+                <input placeholder="Enter address or location" class="flex h-10 w-full rounded-md border border-gray-300 bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500" />
+                <button type="button" class="inline-flex h-10 items-center justify-center whitespace-nowrap rounded-md border border-gray-300 bg-transparent px-4 py-2 text-sm font-medium hover:bg-gray-100">Set</button>
+              </div>
+
+              <div class="flex gap-2">
+                <button type="button" class="inline-flex h-10 items-center justify-center gap-2 whitespace-nowrap rounded-md border border-gray-300 bg-transparent px-4 py-2 text-sm font-medium hover:bg-gray-100">
+                  <i data-lucide="navigation" class="h-4 w-4"></i>
+                  Use Current Location
+                </button>
+              </div>
+            </div>
+
+            <div class="space-y-2">
+              <label for="search_radius" class="text-sm font-medium"> Search Radius: <span id="radius-value">5</span> km </label>
+              <p class="text-sm text-gray-500">How far you're willing to travel to meet study buddies.</p>
+              <input id="search_radius" name="search_radius" type="range" min="1" max="50" value="{{ profile.search_radius|default:5 }}" class="h-2 w-full cursor-pointer appearance-none rounded-lg bg-gray-200 accent-purple-600" oninput="document.getElementById('radius-value').textContent = this.value" />
+              <div class="flex justify-between text-xs text-gray-500">
+                <span>1 km</span>
+                <span>25 km</span>
+                <span>50 km</span>
+              </div>
+            </div>
+          </div>
+
+          <button type="submit" class="inline-flex h-11 w-full items-center justify-center rounded-md bg-purple-600 px-8 text-sm font-medium text-white hover:bg-purple-700">Save Changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // --- Course Search Dropdown ---
+    const allCourses = [
+        {% for course in all_courses %}
+        { id: '{{ course.id }}', code: '{{ course.code }}', name: '{{ course.name|escapejs }}' },
+        {% endfor %}
+    ];
+
+    const searchInput = document.getElementById('course-search');
+    const resultsContainer = document.getElementById('course-results');
+    const coursesContainer = document.getElementById('selected-courses-container');
+    let activeResultIndex = -1;
+
+    function addCourseBadge(courseId, courseCode) {
+        if (document.querySelector(`input[name="courses"][value="${courseId}"]`)) {
+            return;
+        }
+
+        const badge = document.createElement('div');
+        badge.className = 'inline-flex items-center gap-1 rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-semibold';
+        badge.innerHTML = `
+            <span>${courseCode}</span>
+            <input type="hidden" name="courses" value="${courseId}">
+            <button type="button" class="flex-shrink-0" onclick="this.parentElement.remove(); searchInput.focus();">
+                <i data-lucide="x" class="h-3 w-3"></i>
+            </button>
+        `;
+        coursesContainer.appendChild(badge);
+        lucide.createIcons();
+    }
+
+    function updateResults(query) {
+        resultsContainer.innerHTML = '';
+        if (!query) {
+            resultsContainer.classList.add('hidden');
+            return;
+        }
+
+        const filteredCourses = allCourses.filter(course =>
+            course.code.toLowerCase().includes(query.toLowerCase()) ||
+            course.name.toLowerCase().includes(query.toLowerCase())
+        ).slice(0, 10); // Limit results
+
+        if (filteredCourses.length > 0) {
+            resultsContainer.classList.remove('hidden');
+            filteredCourses.forEach((course, index) => {
+                const item = document.createElement('div');
+                item.className = 'relative cursor-pointer select-none px-4 py-2 text-gray-700 hover:bg-purple-100 hover:text-purple-900';
+                item.textContent = `${course.code} - ${course.name}`;
+                item.dataset.courseId = course.id;
+                item.dataset.courseCode = course.code;
+                item.addEventListener('click', () => {
+                    addCourseBadge(course.id, course.code);
+                    searchInput.value = '';
+                    updateResults('');
+                });
+                resultsContainer.appendChild(item);
+            });
+            activeResultIndex = -1;
+        } else {
+            resultsContainer.classList.add('hidden');
+        }
+    }
+
+    searchInput.addEventListener('input', () => updateResults(searchInput.value));
+    searchInput.addEventListener('focus', () => updateResults(searchInput.value));
+
+    document.addEventListener('click', function(event) {
+        if (!searchInput.contains(event.target) && !resultsContainer.contains(event.target)) {
+            resultsContainer.classList.add('hidden');
+        }
+    });
+
+    searchInput.addEventListener('keydown', function(e) {
+        const items = resultsContainer.querySelectorAll('div');
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            if (activeResultIndex < items.length - 1) activeResultIndex++;
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            if (activeResultIndex > 0) activeResultIndex--;
+        } else if (e.key === 'Enter' && activeResultIndex > -1) {
+            e.preventDefault();
+            items[activeResultIndex].click();
+        } else {
+            return;
+        }
+
+        items.forEach((item, index) => {
+            if (index === activeResultIndex) {
+                item.classList.add('bg-purple-100', 'text-purple-900');
+            } else {
+                item.classList.remove('bg-purple-100', 'text-purple-900');
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

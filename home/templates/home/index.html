@@ -1,0 +1,146 @@
+{% extends "home/base.html" %} {% block content %}
+<div class="min-h-screen bg-background">
+  <!-- Hero Section -->
+  <section class="relative overflow-hidden bg-white">
+    <div class="absolute inset-0 bg-gradient-to-br from-primary/10 via-background to-accent/10"></div>
+
+    <div class="container relative mx-auto px-4 py-20 md:py-32">
+      <div class="grid gap-12 lg:grid-cols-2 lg:items-center">
+        <div class="space-y-8">
+          <div class="inline-flex items-center gap-2 rounded-full bg-purple-200 px-4 py-2 text-sm font-medium text-primary">
+            <i data-lucide="heart" class="h-4 w-4"></i>
+            Find Your Study Squad
+          </div>
+
+          <h1 class="text-5xl font-bold leading-tight tracking-tight md:text-6xl">
+            Connect with Your Perfect
+            <span class="bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent"> Study Buddy </span>
+          </h1>
+
+          <p class="text-xl text-gray-600">Match with students who share your courses, study style, and schedule. Make studying more effective and enjoyable with StudyBuddy.</p>
+
+          <div class="flex flex-wrap gap-4">
+            <a href="{% url 'accounts.signup' %}" class="group inline-flex h-12 items-center justify-center rounded-md bg-purple-600 px-6 text-lg font-semibold text-white transition-colors hover:bg-purple-700">
+              Get Started Free
+              <i data-lucide="arrow-right" class="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1"></i>
+            </a>
+
+            <a href="{% url 'accounts.login' %}" class="inline-flex h-12 items-center justify-center rounded-md border border-gray-300 bg-white px-6 text-lg font-medium shadow-sm hover:bg-gray-100"> Sign In </a>
+          </div>
+        </div>
+
+        <div class="relative">
+          <div class="absolute -inset-4 rounded-2xl bg-gradient-to-r from-purple-200 to-pink-200 blur-3xl"></div>
+          <img src="https://images.unsplash.com/photo-1523240795612-9a054b0db644?q=80&w=2070&auto=format&fit=crop" alt="Students studying together" class="relative rounded-2xl shadow-2xl" />
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features Section -->
+  <section class="py-20 md:py-32 bg-white">
+    <div class="container mx-auto px-4">
+      <div class="mb-16 text-center">
+        <h2 class="mb-4 text-4xl font-bold">How It Works</h2>
+        <p class="text-xl text-gray-600">Find compatible study partners in three simple steps</p>
+      </div>
+
+      <div class="grid gap-8 md:grid-cols-3">
+        <div class="rounded-lg border-2 border-gray-200 bg-white text-gray-800 shadow-md transition-all hover:shadow-lg">
+          <div class="p-8">
+            <div class="mb-6 inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-purple-600 to-purple-500">
+              <i data-lucide="users" class="h-8 w-8 text-white"></i>
+            </div>
+            <h3 class="mb-3 text-2xl font-bold">Create Profile</h3>
+            <p class="text-gray-600">Add your courses, major, study preferences, and availability to help us find your perfect match.</p>
+          </div>
+        </div>
+
+        <div class="rounded-lg border-2 border-gray-200 bg-white text-gray-800 shadow-md transition-all hover:shadow-lg">
+          <div class="p-8">
+            <div class="mb-6 inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-gray-700 to-gray-800">
+              <i data-lucide="heart" class="h-8 w-8 text-white"></i>
+            </div>
+            <h3 class="mb-3 text-2xl font-bold">Swipe & Match</h3>
+            <p class="text-gray-600">Browse compatible study partners and swipe right on those you'd like to study with.</p>
+          </div>
+        </div>
+
+        <div class="rounded-lg border-2 border-gray-200 bg-white text-gray-800 shadow-md transition-all hover:shadow-lg">
+          <div class="p-8">
+            <div class="mb-6 inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-pink-500 to-pink-400">
+              <i data-lucide="calendar" class="h-8 w-8 text-white"></i>
+            </div>
+            <h3 class="mb-3 text-2xl font-bold">Study Together</h3>
+            <p class="text-gray-600">When you both swipe right, it's a match! Start chatting and schedule your study sessions.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Benefits Section -->
+  <section class="bg-gray-50 py-20 md:py-32">
+    <div class="container mx-auto px-4">
+      <div class="mb-16 text-center">
+        <h2 class="mb-4 text-4xl font-bold">Why StudyBuddy?</h2>
+        <p class="text-xl text-gray-600">Transform the way you study with compatible partners</p>
+      </div>
+
+      <div class="mx-auto grid max-w-4xl gap-6">
+        <div class="rounded-lg border-l-4 border-l-purple-600 border bg-white text-gray-800 shadow-md">
+          <div class="flex gap-6 p-6">
+            <div class="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-purple-100">
+              <i data-lucide="book-open" class="h-6 w-6 text-purple-600"></i>
+            </div>
+            <div>
+              <h3 class="mb-2 text-xl font-bold">Course-Based Matching</h3>
+              <p class="text-gray-600">Find students in your exact classes for targeted study sessions</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="rounded-lg border-l-4 border-l-purple-600 border bg-white text-gray-800 shadow-md">
+          <div class="flex gap-6 p-6">
+            <div class="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-purple-100">
+              <i data-lucide="users" class="h-6 w-6 text-purple-600"></i>
+            </div>
+            <div>
+              <h3 class="mb-2 text-xl font-bold">Compatible Study Styles</h3>
+              <p class="text-gray-600">Match based on preferences like quiet study, group work, or online sessions</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="rounded-lg border-l-4 border-l-purple-600 border bg-white text-gray-800 shadow-md">
+          <div class="flex gap-6 p-6">
+            <div class="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-purple-100">
+              <i data-lucide="calendar" class="h-6 w-6 text-purple-600"></i>
+            </div>
+            <div>
+              <h3 class="mb-2 text-xl font-bold">Schedule Alignment</h3>
+              <p class="text-gray-600">Connect with students who have overlapping availability</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA Section -->
+  <section class="py-20 md:py-32 bg-white">
+    <div class="container mx-auto px-4">
+      <div class="overflow-hidden rounded-lg border-0 bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-2xl">
+        <div class="p-12 text-center">
+          <h2 class="mb-4 text-4xl font-bold">Ready to Find Your Study Buddy?</h2>
+          <p class="mb-8 text-xl opacity-90">Join thousands of students already studying smarter together</p>
+          <a href="{% url 'accounts.signup' %}" class="group inline-flex h-12 items-center justify-center rounded-md bg-gray-100 px-6 text-lg font-semibold text-gray-800 transition-colors hover:bg-gray-200">
+            Start Matching Now
+            <i data-lucide="arrow-right" class="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1"></i>
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+{% endblock %}

@@ -28,6 +28,10 @@ class Profile(models.Model):
     latitude = models.FloatField(null=True, blank=True)
     longitude = models.FloatField(null=True, blank=True)
     search_radius = models.IntegerField(default=5)
+    # Google Calendar OAuth credentials
+    google_calendar_refresh_token = models.TextField(blank=True, null=True)
+    google_calendar_access_token = models.TextField(blank=True, null=True)
+    google_calendar_token_expiry = models.DateTimeField(blank=True, null=True)
 
     def __str__(self):
         return f"{self.user.username}'s Profile"

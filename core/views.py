@@ -1,12 +1,25 @@
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render, get_object_or_404, redirect
+
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from math import radians, sin, cos, sqrt, atan2
 from django.db.models import Q, Count
 from django.http import JsonResponse
 from django.template.loader import render_to_string
-from .models import Swipe, Match, Message
+from django.contrib import messages
+from django.utils import timezone
+from django.conf import settings
+from .models import Swipe, Match, Message, StudySession
+from accounts.models import Profile
 import json
+from datetime import datetime, timedelta
+import os
+
+from google.auth.transport.requests import Request
+from google.oauth2.credentials import Credentials
+from google_auth_oauthlib.flow import Flow
+from googleapiclient.discovery import build
+from googleapiclient.errors import HttpError
 
 
 # Create your views here.
@@ -353,3 +366,462 @@ def send_message_view(request, match_id):
     match.save()
 
     return JsonResponse({'status': 'success'})
+
+
+# Google Calendar OAuth configuration
+SCOPES = ['https://www.googleapis.com/auth/calendar']
+BASE_URL = os.environ.get('GOOGLE_CALENDAR_BASE_URL', 'http://localhost:8000')
+REDIRECT_URI = os.environ.get('GOOGLE_CALENDAR_REDIRECT_URI', f'{BASE_URL}/app/study-sessions/google-calendar/callback/')
+CLIENT_ID = os.environ.get('GOOGLE_CALENDAR_CLIENT_ID', '')
+CLIENT_SECRET = os.environ.get('GOOGLE_CALENDAR_CLIENT_SECRET', '')
+# Allow insecure transport for localhost (set to '1' for development, '0' or unset for production)
+OAUTHLIB_INSECURE_TRANSPORT = os.environ.get('OAUTHLIB_INSECURE_TRANSPORT', '0')
+
+
+def get_google_calendar_credentials(profile):
+    """Get valid Google Calendar credentials for a user profile."""
+    if not profile.google_calendar_refresh_token:
+        return None
+    
+    creds = Credentials(
+        token=profile.google_calendar_access_token,
+        refresh_token=profile.google_calendar_refresh_token,
+        token_uri='https://oauth2.googleapis.com/token',
+        client_id=CLIENT_ID,
+        client_secret=CLIENT_SECRET
+    )
+    
+    # Refresh token if expired
+    if creds.expired and creds.refresh_token:
+        creds.refresh(Request())
+        profile.google_calendar_access_token = creds.token
+        profile.google_calendar_token_expiry = creds.expiry
+        profile.save()
+    
+    return creds
+
+
+@login_required
+def study_sessions_list(request):
+    """Display all study sessions the user is involved in."""
+    current_user = request.user
+    
+    # Sessions created by the user
+    created_sessions = StudySession.objects.filter(creator=current_user).order_by('start_time')
+    
+    # Sessions where the user is a participant
+    participant_sessions = StudySession.objects.filter(participants=current_user).exclude(creator=current_user).order_by('start_time')
+    
+    # Check if user has Google Calendar connected
+    profile = current_user.profile
+    has_google_calendar = bool(profile.google_calendar_refresh_token)
+    
+    context = {
+        'created_sessions': created_sessions,
+        'participant_sessions': participant_sessions,
+        'has_google_calendar': has_google_calendar,
+    }
+    return render(request, 'core/study_sessions_list.html', context)
+
+
+@login_required
+def study_session_create(request):
+    """Create a new study session."""
+    current_user = request.user
+    
+    if request.method == 'POST':
+        title = request.POST.get('title', '').strip()
+        description = request.POST.get('description', '').strip()
+        start_time_str = request.POST.get('start_time', '')
+        end_time_str = request.POST.get('end_time', '')
+        location = request.POST.get('location', '').strip()
+        latitude = request.POST.get('latitude') or None
+        longitude = request.POST.get('longitude') or None
+        participant_ids = request.POST.getlist('participants')
+        sync_to_calendar = request.POST.get('sync_to_calendar') == 'on'
+        
+        # Validation
+        if not title or not start_time_str or not end_time_str or not location:
+            messages.error(request, 'Please fill in all required fields.')
+            return redirect('core:study_session_create')
+        
+        try:
+            start_time = datetime.fromisoformat(start_time_str.replace('Z', '+00:00'))
+            end_time = datetime.fromisoformat(end_time_str.replace('Z', '+00:00'))
+        except ValueError:
+            messages.error(request, 'Invalid date/time format.')
+            return redirect('core:study_session_create')
+        
+        # Make timezone-aware if needed
+        from django.utils import timezone as tz
+        if start_time.tzinfo is None:
+            start_time = tz.make_aware(start_time)
+        if end_time.tzinfo is None:
+            end_time = tz.make_aware(end_time)
+        
+        if end_time <= start_time:
+            messages.error(request, 'End time must be after start time.')
+            return redirect('core:study_session_create')
+        
+        # Create the study session
+        session = StudySession.objects.create(
+            creator=current_user,
+            title=title,
+            description=description,
+            start_time=start_time,
+            end_time=end_time,
+            location=location,
+            latitude=float(latitude) if latitude else None,
+            longitude=float(longitude) if longitude else None,
+        )
+        
+        # Add participants
+        if participant_ids:
+            participants = User.objects.filter(id__in=participant_ids)
+            session.participants.set(participants)
+        
+        # Sync to Google Calendar if requested
+        if sync_to_calendar:
+            profile = current_user.profile
+            if profile.google_calendar_refresh_token:
+                event_id = sync_session_to_google_calendar(session, profile)
+                if event_id:
+                    session.google_calendar_event_id = event_id
+                    session.save()
+                    messages.success(request, 'Study session created and synced to Google Calendar!')
+                else:
+                    messages.warning(request, 'Study session created, but failed to sync to Google Calendar.')
+            else:
+                messages.warning(request, 'Study session created. Please connect Google Calendar to sync.')
+        else:
+            messages.success(request, 'Study session created successfully!')
+        
+        return redirect('core:study_sessions_list')
+    
+    # GET request - show form
+    # Get user's matches to invite as participants
+    user_matches = Match.objects.filter(Q(user1=current_user) | Q(user2=current_user)).select_related('user1__profile', 'user2__profile')
+    potential_participants = []
+    for match in user_matches:
+        other_user = match.user1 if match.user2 == current_user else match.user2
+        potential_participants.append(other_user)
+    
+    profile = current_user.profile
+    has_google_calendar = bool(profile.google_calendar_refresh_token)
+    
+    context = {
+        'potential_participants': potential_participants,
+        'has_google_calendar': has_google_calendar,
+    }
+    return render(request, 'core/study_session_create.html', context)
+
+
+@login_required
+def study_session_edit(request, session_id):
+    """Edit an existing study session."""
+    session = get_object_or_404(StudySession, id=session_id, creator=request.user)
+    
+    if request.method == 'POST':
+        session.title = request.POST.get('title', '').strip()
+        session.description = request.POST.get('description', '').strip()
+        start_time_str = request.POST.get('start_time', '')
+        end_time_str = request.POST.get('end_time', '')
+        session.location = request.POST.get('location', '').strip()
+        session.latitude = float(request.POST.get('latitude')) if request.POST.get('latitude') else None
+        session.longitude = float(request.POST.get('longitude')) if request.POST.get('longitude') else None
+        participant_ids = request.POST.getlist('participants')
+        sync_to_calendar = request.POST.get('sync_to_calendar') == 'on'
+        
+        try:
+            start_time = datetime.fromisoformat(start_time_str.replace('Z', '+00:00'))
+            end_time = datetime.fromisoformat(end_time_str.replace('Z', '+00:00'))
+        except ValueError:
+            messages.error(request, 'Invalid date/time format.')
+            return redirect('core:study_session_edit', session_id=session_id)
+        
+        # Make timezone-aware if needed
+        from django.utils import timezone as tz
+        if start_time.tzinfo is None:
+            start_time = tz.make_aware(start_time)
+        if end_time.tzinfo is None:
+            end_time = tz.make_aware(end_time)
+        
+        session.start_time = start_time
+        session.end_time = end_time
+        
+        if session.end_time <= session.start_time:
+            messages.error(request, 'End time must be after start time.')
+            return redirect('core:study_session_edit', session_id=session_id)
+        
+        session.save()
+        
+        # Update participants
+        if participant_ids:
+            participants = User.objects.filter(id__in=participant_ids)
+            session.participants.set(participants)
+        
+        # Sync to Google Calendar
+        if sync_to_calendar:
+            profile = request.user.profile
+            if profile.google_calendar_refresh_token:
+                if session.google_calendar_event_id:
+                    # Update existing event
+                    event_id = update_google_calendar_event(session, profile)
+                else:
+                    # Create new event
+                    event_id = sync_session_to_google_calendar(session, profile)
+                    if event_id:
+                        session.google_calendar_event_id = event_id
+                        session.save()
+                if event_id:
+                    messages.success(request, 'Study session updated and synced to Google Calendar!')
+                else:
+                    messages.warning(request, 'Study session updated, but failed to sync to Google Calendar.')
+            else:
+                messages.warning(request, 'Study session updated. Please connect Google Calendar to sync.')
+        else:
+            messages.success(request, 'Study session updated successfully!')
+        
+        return redirect('core:study_sessions_list')
+    
+    # GET request - show form
+    user_matches = Match.objects.filter(Q(user1=request.user) | Q(user2=request.user)).select_related('user1__profile', 'user2__profile')
+    potential_participants = []
+    for match in user_matches:
+        other_user = match.user1 if match.user2 == request.user else match.user2
+        potential_participants.append(other_user)
+    
+    profile = request.user.profile
+    has_google_calendar = bool(profile.google_calendar_refresh_token)
+    
+    context = {
+        'session': session,
+        'potential_participants': potential_participants,
+        'has_google_calendar': has_google_calendar,
+    }
+    return render(request, 'core/study_session_edit.html', context)
+
+
+@login_required
+def study_session_delete(request, session_id):
+    """Delete a study session."""
+    session = get_object_or_404(StudySession, id=session_id, creator=request.user)
+    
+    if request.method == 'POST':
+        # Delete from Google Calendar if synced
+        if session.google_calendar_event_id:
+            profile = request.user.profile
+            if profile.google_calendar_refresh_token:
+                delete_google_calendar_event(session, profile)
+        
+        session.delete()
+        messages.success(request, 'Study session deleted successfully!')
+        return redirect('core:study_sessions_list')
+    
+    context = {'session': session}
+    return render(request, 'core/study_session_delete.html', context)
+
+
+@login_required
+def google_calendar_authorize(request):
+    """Initiate Google Calendar OAuth flow."""
+    # Set insecure transport if configured in environment
+    if OAUTHLIB_INSECURE_TRANSPORT == '1':
+        os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
+    
+    if not CLIENT_ID or not CLIENT_SECRET:
+        messages.error(request, 'Google Calendar integration is not configured. Please contact the administrator.')
+        return redirect('core:study_sessions_list')
+    
+    flow = Flow.from_client_config(
+        {
+            "web": {
+                "client_id": CLIENT_ID,
+                "client_secret": CLIENT_SECRET,
+                "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+                "token_uri": "https://oauth2.googleapis.com/token",
+                "redirect_uris": [REDIRECT_URI]
+            }
+        },
+        scopes=SCOPES
+    )
+    flow.redirect_uri = REDIRECT_URI
+    
+    authorization_url, state = flow.authorization_url(
+        access_type='offline',
+        include_granted_scopes='true',
+        prompt='consent'
+    )
+    
+    # Store state in session
+    request.session['google_calendar_oauth_state'] = state
+    
+    return redirect(authorization_url)
+
+
+@login_required
+def google_calendar_callback(request):
+    """Handle Google Calendar OAuth callback."""
+    # Set insecure transport if configured in environment
+    if OAUTHLIB_INSECURE_TRANSPORT == '1':
+        os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
+    
+    state = request.session.get('google_calendar_oauth_state')
+    if not state or state != request.GET.get('state'):
+        messages.error(request, 'Invalid OAuth state. Please try again.')
+        return redirect('core:study_sessions_list')
+    
+    if 'error' in request.GET:
+        messages.error(request, 'Google Calendar authorization was cancelled.')
+        return redirect('core:study_sessions_list')
+    
+    flow = Flow.from_client_config(
+        {
+            "web": {
+                "client_id": CLIENT_ID,
+                "client_secret": CLIENT_SECRET,
+                "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+                "token_uri": "https://oauth2.googleapis.com/token",
+                "redirect_uris": [REDIRECT_URI]
+            }
+        },
+        scopes=SCOPES,
+        state=state
+    )
+    flow.redirect_uri = REDIRECT_URI
+    
+    authorization_response = request.build_absolute_uri()
+    flow.fetch_token(authorization_response=authorization_response)
+    
+    credentials = flow.credentials
+    
+    # Store credentials in user profile
+    profile = request.user.profile
+    profile.google_calendar_refresh_token = credentials.refresh_token
+    profile.google_calendar_access_token = credentials.token
+    profile.google_calendar_token_expiry = credentials.expiry
+    profile.save()
+    
+    # Clear state from session
+    del request.session['google_calendar_oauth_state']
+    
+    messages.success(request, 'Google Calendar connected successfully!')
+    return redirect('core:study_sessions_list')
+
+
+def sync_session_to_google_calendar(session, profile):
+    """Create a Google Calendar event for a study session."""
+    creds = get_google_calendar_credentials(profile)
+    if not creds:
+        print(f"DEBUG: No credentials found for user {profile.user.username}")
+        return None
+    
+    try:
+        service = build('calendar', 'v3', credentials=creds)
+        
+        # Ensure datetime is timezone-aware
+        start_time = session.start_time
+        end_time = session.end_time
+        if start_time.tzinfo is None:
+            from django.utils import timezone
+            start_time = timezone.make_aware(start_time)
+        if end_time.tzinfo is None:
+            from django.utils import timezone
+            end_time = timezone.make_aware(end_time)
+        
+        # Prepare event
+        event = {
+            'summary': session.title,
+            'description': session.description or f'Study session at {session.location}',
+            'start': {
+                'dateTime': start_time.isoformat(),
+                'timeZone': str(start_time.tzinfo) if start_time.tzinfo else 'UTC',
+            },
+            'end': {
+                'dateTime': end_time.isoformat(),
+                'timeZone': str(end_time.tzinfo) if end_time.tzinfo else 'UTC',
+            },
+            'location': session.location,
+        }
+        
+        # Add attendees (participants)
+        attendees = []
+        if session.creator.email:
+            attendees.append({'email': session.creator.email})
+        for participant in session.participants.all():
+            if participant.email:
+                attendees.append({'email': participant.email})
+        if attendees:
+            event['attendees'] = attendees
+        
+        # Create event
+        print(f"DEBUG: Creating calendar event: {event}")
+        created_event = service.events().insert(calendarId='primary', body=event).execute()
+        print(f"DEBUG: Event created successfully: {created_event.get('id')}")
+        return created_event.get('id')
+    
+    except HttpError as error:
+        print(f'ERROR: Google Calendar API error: {error}')
+        print(f'ERROR: Error details: {error.error_details if hasattr(error, "error_details") else "N/A"}')
+        return None
+    except Exception as error:
+        print(f'ERROR: Unexpected error syncing to Google Calendar: {error}')
+        import traceback
+        traceback.print_exc()
+        return None
+
+
+def update_google_calendar_event(session, profile):
+    """Update an existing Google Calendar event."""
+    creds = get_google_calendar_credentials(profile)
+    if not creds or not session.google_calendar_event_id:
+        return None
+    
+    try:
+        service = build('calendar', 'v3', credentials=creds)
+        
+        # Get existing event
+        event = service.events().get(calendarId='primary', eventId=session.google_calendar_event_id).execute()
+        
+        # Update event
+        event['summary'] = session.title
+        event['description'] = session.description or f'Study session at {session.location}'
+        event['start'] = {
+            'dateTime': session.start_time.isoformat(),
+            'timeZone': 'UTC',
+        }
+        event['end'] = {
+            'dateTime': session.end_time.isoformat(),
+            'timeZone': 'UTC',
+        }
+        event['location'] = session.location
+        
+        # Update attendees
+        attendees = [{'email': session.creator.email}]
+        for participant in session.participants.all():
+            if participant.email:
+                attendees.append({'email': participant.email})
+        event['attendees'] = attendees
+        
+        # Update event
+        updated_event = service.events().update(calendarId='primary', eventId=session.google_calendar_event_id, body=event).execute()
+        return updated_event.get('id')
+    
+    except HttpError as error:
+        print(f'An error occurred: {error}')
+        return None
+
+
+def delete_google_calendar_event(session, profile):
+    """Delete a Google Calendar event."""
+    creds = get_google_calendar_credentials(profile)
+    if not creds or not session.google_calendar_event_id:
+        return False
+    
+    try:
+        service = build('calendar', 'v3', credentials=creds)
+        service.events().delete(calendarId='primary', eventId=session.google_calendar_event_id).execute()
+        return True
+    except HttpError as error:
+        print(f'An error occurred: {error}')
+        return False

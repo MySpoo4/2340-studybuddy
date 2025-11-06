@@ -49,3 +49,25 @@ class Message(models.Model):
 
     def __str__(self):
         return f"Message from {self.sender.username} in match {self.match.id}"
+
+
+class StudySession(models.Model):
+    """Represents a study session created by a user."""
+    creator = models.ForeignKey(settings.AUTH_USER_MODEL, related_name="created_sessions", on_delete=models.CASCADE)
+    title = models.CharField(max_length=255)
+    description = models.TextField(blank=True)
+    start_time = models.DateTimeField()
+    end_time = models.DateTimeField()
+    location = models.CharField(max_length=255)
+    latitude = models.FloatField(null=True, blank=True)
+    longitude = models.FloatField(null=True, blank=True)
+    participants = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name="study_sessions", blank=True)
+    google_calendar_event_id = models.CharField(max_length=255, blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["start_time"]
+
+    def __str__(self):
+        return f"{self.title} - {self.start_time.strftime('%Y-%m-%d %H:%M')}"

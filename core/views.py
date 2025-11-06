@@ -6,6 +6,7 @@ from django.db.models import Q, Count
 from django.http import JsonResponse
 from django.template.loader import render_to_string
 from .models import Swipe, Match, Message
+from django.utils import timezone
 import json
 
 
@@ -319,7 +320,7 @@ def fetch_messages_view(request, match_id):
     messages_data = [{
         'sender_id': msg.sender.id,
         'content': msg.content,
-        'timestamp': msg.timestamp.strftime('%b %d, %I:%M %p')
+        'timestamp': timezone.localtime(msg.timestamp).strftime('%b %d, %I:%M %p')
     } for msg in messages]
 
     return JsonResponse({'messages': messages_data})

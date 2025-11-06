@@ -635,9 +635,6 @@ def google_calendar_authorize(request):
         messages.error(request, 'Google Calendar integration is not configured. Please contact the administrator.')
         return redirect('core:study_sessions_list')
 
-    logger.warning("Authorize endpoint hit")
-    messages.debug("Authorize endpoint hit")
-
     flow = Flow.from_client_config(
         {
             "web": {

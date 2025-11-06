@@ -673,28 +673,39 @@ def google_calendar_callback(request):
         return redirect('core:study_sessions_list')
     
     if 'error' in request.GET:
-        messages.error(request, 'Google Calendar authorization was cancelled.')
+        error = request.GET.get('error')
+        error_description = request.GET.get('error_description', 'No description provided.')
+        print(f"ERROR: Google Calendar authorization failed. Error: '{error}'. Description: {error_description}")
+        messages.error(request, f'Google Calendar authorization failed: {error}')
         return redirect('core:study_sessions_list')
     
-    flow = Flow.from_client_config(
-        {
-            "web": {
-                "client_id": CLIENT_ID,
-                "client_secret": CLIENT_SECRET,
-                "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-                "token_uri": "https://oauth2.googleapis.com/token",
-                "redirect_uris": [REDIRECT_URI]
-            }
-        },
-        scopes=SCOPES,
-        state=state
-    )
-    flow.redirect_uri = REDIRECT_URI
-    
-    authorization_response = request.build_absolute_uri()
-    flow.fetch_token(authorization_response=authorization_response)
-    
-    credentials = flow.credentials
+    try:
+        flow = Flow.from_client_config(
+            {
+                "web": {
+                    "client_id": CLIENT_ID,
+                    "client_secret": CLIENT_SECRET,
+                    "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+                    "token_uri": "https://oauth2.googleapis.com/token",
+                    "redirect_uris": [REDIRECT_URI]
+                }
+            },
+            scopes=SCOPES,
+            state=state
+        )
+        flow.redirect_uri = REDIRECT_URI
+        
+        authorization_response = request.build_absolute_uri()
+        flow.fetch_token(authorization_response=authorization_response)
+        
+        credentials = flow.credentials
+    except Exception as e:
+        # This will catch errors during the token exchange, such as a redirect_uri_mismatch
+        print(f"ERROR: Failed to fetch Google OAuth token. Error: {e}")
+        import traceback
+        traceback.print_exc()
+        messages.error(request, 'Failed to connect to Google Calendar. There might be a configuration issue.')
+        return redirect('core:study_sessions_list')
     
     # Store credentials in user profile
     profile = request.user.profile

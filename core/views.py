@@ -11,6 +11,7 @@ from django.utils import timezone
 from django.conf import settings
 from .models import Swipe, Match, Message, StudySession
 from accounts.models import Profile
+
 import json
 from datetime import datetime, timedelta
 import os
@@ -332,7 +333,7 @@ def fetch_messages_view(request, match_id):
     messages_data = [{
         'sender_id': msg.sender.id,
         'content': msg.content,
-        'timestamp': msg.timestamp.strftime('%b %d, %I:%M %p')
+        'timestamp': timezone.localtime(msg.timestamp).strftime('%b %d, %I:%M %p')
     } for msg in messages]
 
     return JsonResponse({'messages': messages_data})

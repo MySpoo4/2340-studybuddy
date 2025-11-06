@@ -622,7 +622,8 @@ def study_session_delete(request, session_id):
     context = {'session': session}
     return render(request, 'core/study_session_delete.html', context)
 
-
+import logging
+logger = logging.getLogger(__name__)
 @login_required
 def google_calendar_authorize(request):
     """Initiate Google Calendar OAuth flow."""
@@ -633,7 +634,10 @@ def google_calendar_authorize(request):
     if not CLIENT_ID or not CLIENT_SECRET:
         messages.error(request, 'Google Calendar integration is not configured. Please contact the administrator.')
         return redirect('core:study_sessions_list')
-    
+
+    logger.warning("Authorize endpoint hit")
+    messages.debug("Authorize endpoint hit")
+
     flow = Flow.from_client_config(
         {
             "web": {
@@ -647,13 +651,16 @@ def google_calendar_authorize(request):
         scopes=SCOPES
     )
     flow.redirect_uri = REDIRECT_URI
+    logger.warning("Flow created, redirect_uri=%s", flow.redirect_uri)
+    messages.warning(request, "Flow created, redirect_uri=%s", flow.redirect_uri)
     
     authorization_url, state = flow.authorization_url(
         access_type='offline',
         include_granted_scopes='true',
         prompt='consent'
     )
-    
+    logger.warning("Authorization URL created, state=%s", state)
+    messages.warning(request, "Authorization URL created, state=%s", state)
     # Store state in session
     request.session['google_calendar_oauth_state'] = state
     

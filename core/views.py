@@ -464,6 +464,12 @@ OAUTHLIB_INSECURE_TRANSPORT = os.environ.get("OAUTHLIB_INSECURE_TRANSPORT", "0")
 
 def get_google_calendar_credentials(profile):
     """Get valid Google Calendar credentials for a user profile."""
+
+    if os.path.exists("token.json"):
+        creds = Credentials.from_authorized_user_file("token.json", SCOPES)
+        print("here")
+        return creds
+
     if not profile.google_calendar_refresh_token:
         return None
 
@@ -756,18 +762,22 @@ def google_calendar_authorize(request):
         )
         return redirect("core:study_sessions_list")
 
-    flow = Flow.from_client_config(
-        {
-            "web": {
-                "client_id": CLIENT_ID,
-                "client_secret": CLIENT_SECRET,
-                "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-                "token_uri": "https://oauth2.googleapis.com/token",
-                "redirect_uris": [REDIRECT_URI],
-            }
-        },
-        scopes=SCOPES,
+    flow = Flow.from_client_secrets_file(
+        "credentials.json", scopes=SCOPES, redirect_uri=REDIRECT_URI
     )
+
+    # flow = Flow.from_client_config(
+    #     {
+    #         "web": {
+    #             "client_id": CLIENT_ID,
+    #             "client_secret": CLIENT_SECRET,
+    #             "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+    #             "token_uri": "https://oauth2.googleapis.com/token",
+    #             "redirect_uris": [REDIRECT_URI],
+    #         }
+    #     },
+    #     scopes=SCOPES,
+    # )
     flow.redirect_uri = REDIRECT_URI
 
     authorization_url, state = flow.authorization_url(
@@ -850,6 +860,7 @@ def google_calendar_callback(request):
 
 
 def sync_session_to_google_calendar(session, profile):
+    print("start syncing")
     """Create a Google Calendar event for a study session."""
     creds = get_google_calendar_credentials(profile)
     if not creds:

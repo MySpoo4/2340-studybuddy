@@ -120,6 +120,14 @@
       const closeIconBtn = document.getElementById('close-match-popup-icon');
       if(closeBtn) closeBtn.addEventListener('click', closePopup);
       if(closeIconBtn) closeIconBtn.addEventListener('click', closePopup);
+
+      // Attach listener for the "Start Messaging" button
+      const startChatBtn = document.getElementById('start-messaging-btn');
+      if (startChatBtn) {
+          startChatBtn.addEventListener('click', function () {
+              window.location.href = this.dataset.chatUrl;
+          });
+      }
   }
 
   async function checkForNewMatches() {

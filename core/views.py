@@ -180,7 +180,8 @@ def swipe_action_view(request):
             # Render the match popup content
             popup_html = render_to_string('core/match_popup.html', {
                 'match_profile': match_profile,
-                'current_user_profile': swiper.profile
+                'current_user_profile': swiper.profile,
+                'match_id': match.id,
             }, request=request)
             return JsonResponse({'status': 'match', 'popup_html': popup_html})
 

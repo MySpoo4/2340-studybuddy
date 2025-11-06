@@ -7,7 +7,11 @@
   </div>
 
   <div class="mt-8 space-y-4">
-    <a href="#" class="inline-flex h-12 w-full items-center justify-center rounded-md bg-purple-600 px-6 text-lg font-semibold text-white transition-colors hover:bg-purple-700"> Send a Message </a>
+    <button
+      id="start-messaging-btn"
+      data-chat-url="{% url 'core:chat_room' match_id %}"
+      class="inline-flex h-12 w-full items-center justify-center rounded-md bg-purple-600 px-6 text-lg font-semibold text-white transition-colors hover:bg-purple-700"
+    >Send a Message</button>
     <button id="close-match-popup" class="inline-flex h-12 w-full items-center justify-center rounded-md border border-gray-300 bg-white px-6 text-lg font-medium shadow-sm hover:bg-gray-100">Keep Swiping</button>
   </div>
 

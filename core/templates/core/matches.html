@@ -1,0 +1,129 @@
+{% extends "core/base.html" %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+<style>
+  #matches-map {
+    height: 400px;
+  }
+</style>
+{% endblock %}
+
+{% block page_title %}Your Matches{% endblock %}
+
+{% block page_content %}
+<div class="mx-auto max-w-4xl">
+  <h2 class="mb-6 text-3xl font-bold text-gray-800">Your Study Matches</h2>
+
+  {% if matched_profiles_data %}
+    <!-- Map Container -->
+    <div id="matches-map" class="mb-8 w-full rounded-lg border shadow-sm"></div>
+
+    <!-- Matches Grid -->
+    <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+      {% for data in matched_profiles_data %}
+        {% with profile=data.profile %}
+        <div class="rounded-lg border bg-white shadow-sm">
+          <div class="p-6">
+            <div class="flex items-center gap-4 mb-4">
+              <img src="https://source.unsplash.com/random/100x100?portrait&sig={{ profile.user.id }}" alt="{{ profile.user.username }}'s profile picture" class="h-16 w-16 rounded-full object-cover" />
+              <div>
+                <h3 class="text-xl font-semibold">{{ profile.user.get_full_name|default:profile.user.username }}</h3>
+                <p class="text-sm text-gray-500">{{ profile.major|default:"No major" }}</p>
+              </div>
+            </div>
+
+            {% if data.distance is not None %}
+            <div class="mb-4 flex items-center gap-4 text-sm text-gray-600">
+              <div class="flex items-center gap-1">
+                <i data-lucide="map-pin" class="h-4 w-4"></i>
+                <span>{{ data.distance }} km away</span>
+              </div>
+              <div class="flex items-center gap-1">
+                <i data-lucide="clock" class="h-4 w-4"></i>
+                <span>~{{ data.eta }} min drive</span>
+              </div>
+            </div>
+            {% endif %}
+
+            <div class="space-y-4">
+              <div>
+                <h4 class="font-medium text-gray-700">Courses:</h4>
+                <div class="flex flex-wrap gap-1.5 mt-1">
+                  {% for course in profile.courses.all|slice:":3" %}
+                    <span class="rounded-full bg-purple-100 px-2.5 py-0.5 text-xs font-semibold text-purple-800">{{ course.code }}</span>
+                  {% empty %}
+                    <span class="text-xs text-gray-500">No courses listed.</span>
+                  {% endfor %}
+                </div>
+              </div>
+
+              <div>
+                <h4 class="font-medium text-gray-700">Study Style:</h4>
+                <div class="flex flex-wrap gap-1.5 mt-1">
+                  {% for pref in profile.study_preferences.all|slice:":3" %}
+                    <span class="rounded-full bg-pink-100 px-2.5 py-0.5 text-xs font-semibold text-pink-800">{{ pref.name }}</span>
+                  {% empty %}
+                    <span class="text-xs text-gray-500">No preferences set.</span>
+                  {% endfor %}
+                </div>
+              </div>
+            </div>
+            <a href="{% url 'core:chat_room' data.match_id %}" class="mt-6 inline-flex h-10 items-center justify-center rounded-md bg-purple-600 px-4 text-sm font-medium text-white hover:bg-purple-700 w-full">Start Chat</a>
+          </div>
+        </div>
+        {% endwith %}
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="text-center py-12 border rounded-lg bg-white shadow-sm">
+      <i data-lucide="users-2" class="mb-4 h-16 w-16 text-gray-400 mx-auto"></i>
+      <p class="text-lg text-gray-600">You haven't matched with anyone yet. Keep swiping!</p>
+      <a href="{% url 'core:swipe' %}" class="mt-6 inline-flex h-10 items-center justify-center rounded-md bg-purple-600 px-5 text-sm font-medium text-white hover:bg-purple-700">Discover Buddies</a>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const mapContainer = document.getElementById('matches-map');
+    if (!mapContainer) return;
+
+    // Correctly create a JavaScript array for the user's location, or an empty array if not set.
+    const currentUser = [{% if current_user_profile.latitude and current_user_profile.longitude %}{{ current_user_profile.latitude }}, {{ current_user_profile.longitude }}{% endif %}];
+    const hasCurrentUserLocation = currentUser.length === 2;
+
+    const matches = [
+        {% for data in matched_profiles_data %}
+            {% if data.profile.latitude and data.profile.longitude %}
+            {
+                lat: {{ data.profile.latitude }},
+                lng: {{ data.profile.longitude }},
+                name: "{{ data.profile.user.get_full_name|default:data.profile.user.username|escapejs }}",
+                distance: "{{ data.distance }}",
+                eta: "{{ data.eta }}"
+            },
+            {% endif %}
+        {% endfor %}
+    ];
+
+    const map = L.map('matches-map').setView(hasCurrentUserLocation ? currentUser : [39.82, -98.57], hasCurrentUserLocation ? 10 : 4);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+    setTimeout(() => map.invalidateSize(), 100);
+
+    // Add marker for current user
+    if (hasCurrentUserLocation) {
+        L.marker(currentUser, { icon: L.icon({ iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png', shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png', iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41] }) }).addTo(map).bindPopup("<b>Your Location</b>");
+    }
+
+    // Add markers for matches
+    matches.forEach(match => {
+        const popupContent = `<b>${match.name}</b><br>${match.distance} km away (~${match.eta} min)`;
+        L.marker([match.lat, match.lng]).addTo(map).bindPopup(popupContent);
+    });
+});
+</script>
+{% endblock %}

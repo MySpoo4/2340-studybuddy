@@ -1,4 +1,6 @@
 {% extends "home/base.html" %} {% block content %}
+{% block extra_head %}{% endblock %}
+
 <div id="app-container" class="flex h-screen bg-gray-100" data-sidebar-state="">
   <!-- Sidebar -->
   <aside id="sidebar" class="flex flex-col bg-white transition-all duration-300 ease-in-out w-64 sidebar-collapsed:w-16">
@@ -12,26 +14,28 @@
     </div>
 
     <nav class="flex-1 space-y-2 p-2 sidebar-collapsed:p-3">
-      <a href="{% url 'core.swipe' %}" class="flex h-10 items-center gap-3 rounded-lg px-3 text-gray-600 hover:bg-gray-100 {% if request.resolver_match.url_name == 'core.swipe' %}bg-purple-100 text-purple-700{% endif %} sidebar-collapsed:px-2">
+      <a href="{% url 'core:swipe' %}" class="flex h-10 items-center gap-3 rounded-lg px-3 text-gray-600 hover:bg-gray-100 {% if request.resolver_match.url_name == 'swipe' %}bg-purple-100 text-purple-700{% endif %} sidebar-collapsed:px-2">
         <i data-lucide="compass" class="h-5 w-5 flex-shrink-0"></i>
         <span class="sidebar-text whitespace-nowrap sidebar-collapsed:hidden">Discover</span>
       </a>
-      <a href="#" class="flex h-10 items-center gap-3 rounded-lg px-3 text-gray-600 hover:bg-gray-100 sidebar-collapsed:px-2">
+      <a href="{% url 'core:matches' %}" class="flex h-10 items-center gap-3 rounded-lg px-3 text-gray-600 hover:bg-gray-100 {% if request.resolver_match.url_name == 'matches' %}bg-purple-100 text-purple-700{% endif %} sidebar-collapsed:px-2">
         <i data-lucide="heart" class="h-5 w-5 flex-shrink-0"></i>
         <span class="sidebar-text whitespace-nowrap sidebar-collapsed:hidden">Matches</span>
+        <span id="matches-notification-badge" class="hidden sidebar-text ml-auto rounded-full bg-red-500 px-2 py-0.5 text-xs font-bold text-white sidebar-collapsed:hidden"></span>
       </a>
-      <a href="#" class="flex h-10 items-center gap-3 rounded-lg px-3 text-gray-600 hover:bg-gray-100 sidebar-collapsed:px-2">
+      <a href="{% url 'core:inbox' %}" class="flex h-10 items-center gap-3 rounded-lg px-3 text-gray-600 hover:bg-gray-100 {% if request.resolver_match.url_name == 'inbox' or request.resolver_match.url_name == 'chat_room' %}bg-purple-100 text-purple-700{% endif %} sidebar-collapsed:px-2">
         <i data-lucide="message-square" class="h-5 w-5 flex-shrink-0"></i>
         <span class="sidebar-text whitespace-nowrap sidebar-collapsed:hidden">Messages</span>
+        <span id="messages-notification-badge" class="hidden sidebar-text ml-auto rounded-full bg-red-500 px-2 py-0.5 text-xs font-bold text-white sidebar-collapsed:hidden"></span>
       </a>
-      <a href="{% url 'accounts.profile' %}" class="flex h-10 items-center gap-3 rounded-lg px-3 text-gray-600 hover:bg-gray-100 {% if request.resolver_match.view_name == 'accounts:profile' or request.resolver_match.url_name == 'accounts.profile' %}bg-purple-100 text-purple-700{% endif %} sidebar-collapsed:px-2">
+      <a href="{% url 'accounts:profile' %}" class="flex h-10 items-center gap-3 rounded-lg px-3 text-gray-600 hover:bg-gray-100 {% if request.resolver_match.view_name == 'accounts:profile' %}bg-purple-100 text-purple-700{% endif %} sidebar-collapsed:px-2">
         <i data-lucide="user" class="h-5 w-5 flex-shrink-0"></i>
         <span class="sidebar-text whitespace-nowrap sidebar-collapsed:hidden">Profile</span>
       </a>
     </nav>
 
     <div class="border-t p-2 sidebar-collapsed:p-3">
-      <form action="{% url 'accounts.logout' %}" method="post">
+      <form action="{% url 'accounts:logout' %}" method="post">
         {% csrf_token %}
         <button type="submit" class="flex h-10 w-full items-center gap-3 rounded-lg px-3 text-gray-600 hover:bg-gray-100 sidebar-collapsed:px-2">
           <i data-lucide="log-out" class="h-5 w-5 flex-shrink-0"></i>
@@ -58,6 +62,9 @@
     </main>
   </div>
 </div>
+
+<!-- Match Popup Container (shared across app pages) -->
+<div id="match-popup-container" class="pointer-events-none fixed inset-0 z-50 flex items-center justify-center bg-black/60 opacity-0 transition-opacity duration-300"></div>
 
 <script>
   // This script now runs after the DOM is loaded to set up interactions
@@ -92,5 +99,78 @@
     initialIcon.setAttribute('data-lucide', appContainer.dataset.sidebarState === 'collapsed' ? 'panel-right' : 'panel-left');
     lucide.createIcons();
   });
+
+  // --- New Match Notification Polling ---
+  function handleNewMatchPopup(popupHtml) {
+      const popupContainer = document.getElementById('match-popup-container');
+      if (!popupContainer) return;
+
+      popupContainer.innerHTML = popupHtml;
+      popupContainer.classList.remove('opacity-0');
+      popupContainer.classList.add('pointer-events-auto');
+      lucide.createIcons(); // Render icons in the new popup
+
+      const closePopup = () => {
+          popupContainer.classList.add('opacity-0');
+          popupContainer.classList.remove('pointer-events-auto');
+      };
+
+      // Attach listeners to the close buttons within the newly injected popup
+      const closeBtn = document.getElementById('close-match-popup');
+      const closeIconBtn = document.getElementById('close-match-popup-icon');
+      if(closeBtn) closeBtn.addEventListener('click', closePopup);
+      if(closeIconBtn) closeIconBtn.addEventListener('click', closePopup);
+  }
+
+  async function checkForNewMatches() {
+      try {
+          const response = await fetch("{% url 'core:check_new_matches' %}");
+          if (!response.ok) return;
+
+          const result = await response.json();
+          const matchesBadge = document.getElementById('matches-notification-badge');
+          const likesYouBadge = document.getElementById('likes-you-badge'); // For the swipe page
+          const messagesBadge = document.getElementById('messages-notification-badge');
+
+          if (result.status === 'success') {
+              // Update matches notification badge
+              if (matchesBadge) {
+                  const matchesCount = result.new_matches_count;
+                  if (matchesCount > 0) {
+                      matchesBadge.textContent = matchesCount;
+                      matchesBadge.classList.remove('hidden');
+                      matchesBadge.classList.add('inline-block');
+                  } else {
+                      matchesBadge.classList.add('hidden');
+                      matchesBadge.classList.remove('inline-block');
+                  }
+              }
+              // Update "Likes You" badge on the swipe page
+              if (likesYouBadge) {
+                  const likesCount = result.likes_you_count;
+                  likesYouBadge.textContent = likesCount;
+                  likesYouBadge.classList.toggle('hidden', likesCount === 0);
+              } else {
+              }
+              // Update messages notification badge
+              if (messagesBadge) {
+                  const messagesCount = result.unread_messages_count;
+                  if (messagesCount > 0) {
+                      messagesBadge.textContent = messagesCount;
+                      messagesBadge.classList.remove('hidden');
+                  } else {
+                      messagesBadge.classList.add('hidden');
+                  }
+              }
+          }
+      } catch (error) {
+          console.error('Error checking for new matches:', error);
+      }
+  }
+
+  checkForNewMatches(); // Check immediately on page load
+  setInterval(checkForNewMatches, 15000); // Then check every 15 seconds
 </script>
+
+{% block extra_scripts %}{% endblock %}
 {% endblock %}

@@ -25,8 +25,8 @@ class Profile(models.Model):
     bio = models.TextField(blank=True)
     courses = models.ManyToManyField(Course, blank=True)
     study_preferences = models.ManyToManyField(StudyPreference, blank=True)
-    location_lat = models.FloatField(null=True, blank=True)
-    location_lng = models.FloatField(null=True, blank=True)
+    latitude = models.FloatField(null=True, blank=True)
+    longitude = models.FloatField(null=True, blank=True)
     search_radius = models.IntegerField(default=5)
 
     def __str__(self):

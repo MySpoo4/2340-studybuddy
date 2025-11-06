@@ -5,6 +5,7 @@
     <div class="absolute inset-0 bg-gradient-to-br from-primary/10 via-background to-accent/10"></div>
 
     <div class="container relative mx-auto px-4 py-20 md:py-32">
+    <div class="container relative mx-auto px-4 pt-12 pb-20 md:pt-20 md:pb-32">
       <div class="grid gap-12 lg:grid-cols-2 lg:items-center">
         <div class="space-y-8">
           <div class="inline-flex items-center gap-2 rounded-full bg-purple-200 px-4 py-2 text-sm font-medium text-primary">
@@ -20,12 +21,12 @@
           <p class="text-xl text-gray-600">Match with students who share your courses, study style, and schedule. Make studying more effective and enjoyable with StudyBuddy.</p>
 
           <div class="flex flex-wrap gap-4">
-            <a href="{% url 'accounts.signup' %}" class="group inline-flex h-12 items-center justify-center rounded-md bg-purple-600 px-6 text-lg font-semibold text-white transition-colors hover:bg-purple-700">
+            <a href="{% url 'accounts:signup' %}" class="group inline-flex h-12 items-center justify-center rounded-md bg-purple-600 px-6 text-lg font-semibold text-white transition-colors hover:bg-purple-700">
               Get Started Free
               <i data-lucide="arrow-right" class="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1"></i>
             </a>
 
-            <a href="{% url 'accounts.login' %}" class="inline-flex h-12 items-center justify-center rounded-md border border-gray-300 bg-white px-6 text-lg font-medium shadow-sm hover:bg-gray-100"> Sign In </a>
+            <a href="{% url 'accounts:login' %}" class="inline-flex h-12 items-center justify-center rounded-md border border-gray-300 bg-white px-6 text-lg font-medium shadow-sm hover:bg-gray-100"> Sign In </a>
           </div>
         </div>
 
@@ -39,6 +40,7 @@
 
   <!-- Features Section -->
   <section class="py-20 md:py-32 bg-white">
+  <section class="py-16 md:py-24 bg-white">
     <div class="container mx-auto px-4">
       <div class="mb-16 text-center">
         <h2 class="mb-4 text-4xl font-bold">How It Works</h2>
@@ -81,6 +83,7 @@
 
   <!-- Benefits Section -->
   <section class="bg-gray-50 py-20 md:py-32">
+  <section class="bg-gray-50 py-16 md:py-24">
     <div class="container mx-auto px-4">
       <div class="mb-16 text-center">
         <h2 class="mb-4 text-4xl font-bold">Why StudyBuddy?</h2>
@@ -129,18 +132,17 @@
 
   <!-- CTA Section -->
   <section class="py-20 md:py-32 bg-white">
+  <section class="py-16 md:py-24 bg-white">
     <div class="container mx-auto px-4">
       <div class="overflow-hidden rounded-lg border-0 bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-2xl">
         <div class="p-12 text-center">
           <h2 class="mb-4 text-4xl font-bold">Ready to Find Your Study Buddy?</h2>
           <p class="mb-8 text-xl opacity-90">Join thousands of students already studying smarter together</p>
-          <a href="{% url 'accounts.signup' %}" class="group inline-flex h-12 items-center justify-center rounded-md bg-gray-100 px-6 text-lg font-semibold text-gray-800 transition-colors hover:bg-gray-200">
-            Start Matching Now
-            <i data-lucide="arrow-right" class="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1"></i>
+          <a href="{% url 'accounts:signup' %}" class="group inline-flex h-12 items-center justify-center rounded-md bg-gray-100 px-6 text-lg font-semibold text-gray-800 transition-colors hover:bg-gray-200">
+            Start Matching
           </a>
         </div>
       </div>
     </div>
   </section>
-</div>
 {% endblock %}

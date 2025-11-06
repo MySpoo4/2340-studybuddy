@@ -1,4 +1,8 @@
-{% extends "accounts/base_accounts.html" %}
+{% extends "core/base.html" %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+{% endblock %}
 
 {% block page_title %}Edit Profile{% endblock %}
 
@@ -10,7 +14,7 @@
       <p class="text-sm text-gray-500">Update your information to improve your matches.</p>
     </div>
     <div class="p-6 pt-0">
-      <form method="post" action="{% url 'accounts.edit_profile' %}">
+      <form method="post" action="{% url 'accounts:edit_profile' %}">
         {% csrf_token %}
         <div class="space-y-6">
           <div class="space-y-2">
@@ -90,15 +94,16 @@
                 <i data-lucide="map-pin" class="h-4 w-4"></i>
                 Campus Location / Study Spot
               </label>
-              <p class="text-sm text-gray-500">Set your location to find nearby study buddies.</p>
+              <p class="text-sm text-gray-500">Click on the map to set your preferred study location, or use your current location.</p>
 
-              <div class="flex gap-2">
-                <input placeholder="Enter address or location" class="flex h-10 w-full rounded-md border border-gray-300 bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500" />
-                <button type="button" class="inline-flex h-10 items-center justify-center whitespace-nowrap rounded-md border border-gray-300 bg-transparent px-4 py-2 text-sm font-medium hover:bg-gray-100">Set</button>
-              </div>
+              <!-- Hidden fields to store lat/lng -->
+              <input type="hidden" name="latitude" id="latitude" value="{{ profile.latitude|default:'' }}">
+              <input type="hidden" name="longitude" id="longitude" value="{{ profile.longitude|default:'' }}">
 
-              <div class="flex gap-2">
-                <button type="button" class="inline-flex h-10 items-center justify-center gap-2 whitespace-nowrap rounded-md border border-gray-300 bg-transparent px-4 py-2 text-sm font-medium hover:bg-gray-100">
+              <div id="map" class="h-64 w-full rounded-md border"></div>
+
+              <div class="flex gap-2 mt-2">
+                <button type="button" id="use-current-location" class="inline-flex h-10 items-center justify-center gap-2 whitespace-nowrap rounded-md border border-gray-300 bg-transparent px-4 py-2 text-sm font-medium hover:bg-gray-100">
                   <i data-lucide="navigation" class="h-4 w-4"></i>
                   Use Current Location
                 </button>
@@ -124,10 +129,11 @@
   </div>
 </div>
 
+{% block extra_scripts %}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    // --- Course Search Dropdown ---
-    const allCourses = [
+const allCourses = [
         {% for course in all_courses %}
         { id: '{{ course.id }}', code: '{{ course.code }}', name: '{{ course.name|escapejs }}' },
         {% endfor %}
@@ -221,6 +227,11 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     });
-});
 </script>
+
+<!-- Include the dedicated map script -->
+<script>
+    {% include 'accounts/map_script.js' %}
+</script>
+{% endblock %}
 {% endblock %}

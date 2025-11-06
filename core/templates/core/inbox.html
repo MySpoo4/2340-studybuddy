@@ -1,0 +1,59 @@
+{% extends "core/base.html" %}
+
+{% block page_title %}Messages{% endblock %}
+
+{% block page_content %}
+<div class="mx-auto max-w-2xl">
+  <h2 class="mb-6 text-3xl font-bold text-gray-800">Your Conversations</h2>
+
+  {% if matches_data %}
+    <div class="space-y-4">
+      {% for data in matches_data %}
+        {% with match=data.match %}
+          {% if request.user == match.user1 %}
+            {% with other_user=match.user2 %}
+              <a href="{% url 'core:chat_room' match.id %}" class="block rounded-lg border bg-white p-4 shadow-sm transition-shadow hover:shadow-md">
+                <div class="flex items-center gap-4">
+                  <div class="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-purple-200 to-pink-200">
+                    <i data-lucide="user" class="h-8 w-8 text-purple-700"></i>
+                  </div>
+                  <div class="flex-1">
+                    <div class="flex justify-between">
+                      <h3 class="text-lg font-semibold text-gray-800">{{ other_user.get_full_name|default:other_user.username }}</h3>
+                      {% if data.last_message %}<p class="text-xs text-gray-500">{{ data.last_message.timestamp|timesince }} ago</p>{% endif %}
+                    </div>
+                    <p class="truncate text-sm text-gray-500">{{ data.last_message.content|default:"No messages yet. Say hello!" }}</p>
+                  </div>
+                </div>
+              </a>
+            {% endwith %}
+          {% else %}
+            {% with other_user=match.user1 %}
+              <a href="{% url 'core:chat_room' match.id %}" class="block rounded-lg border bg-white p-4 shadow-sm transition-shadow hover:shadow-md">
+                <div class="flex items-center gap-4">
+                  <div class="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-purple-200 to-pink-200">
+                    <i data-lucide="user" class="h-8 w-8 text-purple-700"></i>
+                  </div>
+                  <div class="flex-1">
+                    <div class="flex justify-between">
+                      <h3 class="text-lg font-semibold text-gray-800">{{ other_user.get_full_name|default:other_user.username }}</h3>
+                      {% if data.last_message %}<p class="text-xs text-gray-500">{{ data.last_message.timestamp|timesince }} ago</p>{% endif %}
+                    </div>
+                    <p class="truncate text-sm text-gray-500">{{ data.last_message.content|default:"No messages yet. Say hello!" }}</p>
+                  </div>
+                </div>
+              </a>
+            {% endwith %}
+          {% endif %}
+        {% endwith %}
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="text-center py-12 border rounded-lg bg-white shadow-sm">
+      <i data-lucide="message-square" class="mb-4 h-16 w-16 text-gray-400 mx-auto"></i>
+      <p class="text-lg text-gray-600">You have no conversations yet.</p>
+      <p class="text-sm text-gray-500">Find a match to start chatting!</p>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

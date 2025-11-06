@@ -4,6 +4,7 @@ from django.contrib.auth import login as auth_login, logout as auth_logout
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib import messages
 from .models import Profile, Course, StudyPreference
+import requests
 
 
 # Create your views here.
@@ -14,7 +15,7 @@ def signup(request):
             user = form.save()
             auth_login(request, user)
             messages.success(request, "Account created successfully!")
-            return redirect("accounts.profile")
+            return redirect("accounts:profile")
     else:
         form = UserCreationForm()
     return render(request, "accounts/signup.html", {"form": form})
@@ -27,7 +28,7 @@ def login(request):
             user = form.get_user()
             auth_login(request, user)
             messages.success(request, "Welcome back!")
-            return redirect("core.swipe")
+            return redirect("core:swipe")
         else:
             messages.error(request, "Invalid username or password.")
     else:
@@ -38,13 +39,37 @@ def login(request):
 @login_required
 def logout(request):
     auth_logout(request)
-    return redirect("home.index")
+    return redirect("home:index")
 
 @login_required
 def profile(request):
     # This is now the view-only profile page.
     profile = request.user.profile
-    return render(request, "accounts/profile_view.html", {"profile": profile})
+    location_name = None
+
+    if profile.latitude and profile.longitude:
+        try:
+            # Use Nominatim for reverse geocoding. A User-Agent is required by their usage policy.
+            url = f"https://nominatim.openstreetmap.org/reverse?format=json&lat={profile.latitude}&lon={profile.longitude}&zoom=10"
+            headers = {'User-Agent': 'StudyBuddy/1.0'}
+            response = requests.get(url, headers=headers, timeout=5)
+            response.raise_for_status()
+            data = response.json()
+            
+            address = data.get('address', {})
+            # Construct a readable location string, preferring city/town, then state, then country.
+            parts = [
+                address.get('city'),
+                address.get('town'),
+                address.get('village'),
+                address.get('state'),
+                address.get('country')
+            ]
+            location_name = ', '.join(p for p in parts if p)
+        except (requests.RequestException, KeyError):
+            location_name = "Location details unavailable"
+
+    return render(request, "accounts/profile_view.html", {"profile": profile, "location_name": location_name})
 
 @login_required
 def edit_profile(request):
@@ -64,6 +89,8 @@ def edit_profile(request):
         profile.major = request.POST.get('major', '')
         profile.year_of_study = request.POST.get('year') or None
         profile.bio = request.POST.get('bio', '')
+        profile.latitude = request.POST.get('latitude') or None
+        profile.longitude = request.POST.get('longitude') or None
         profile.search_radius = request.POST.get('search_radius', 5)
         profile.save()
 
@@ -76,7 +103,7 @@ def edit_profile(request):
         profile.study_preferences.set(preference_ids)
 
         messages.success(request, "Your profile has been updated successfully!")
-        return redirect('accounts.profile')
+        return redirect('accounts:profile')
 
     # --- Prepare data for GET request ---
     profile = request.user.profile

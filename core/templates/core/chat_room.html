@@ -1,0 +1,153 @@
+{% extends "core/base.html" %}
+
+{% block page_title %}Chat with {{ other_user.get_full_name|default:other_user.username }}{% endblock %}
+
+{% block page_content %}
+<div class="flex h-full flex-col">
+  <!-- Chat Header -->
+  <div class="mb-4 flex items-center gap-4">
+    <a href="{% url 'core:inbox' %}" class="rounded-full p-2 hover:bg-gray-200">
+      <i data-lucide="arrow-left" class="h-5 w-5"></i>
+    </a>
+    <div class="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-purple-200 to-pink-200">
+      <i data-lucide="user" class="h-7 w-7 text-purple-700"></i>
+    </div>
+    <div>
+      <h2 class="text-xl font-bold text-gray-800">{{ other_user.get_full_name|default:other_user.username }}</h2>
+      <p class="text-sm text-gray-500">Matched on {{ match.timestamp|date:"M d, Y" }}</p>
+    </div>
+  </div>
+
+  <!-- Messages Area -->
+  <div id="message-list" class="flex-1 space-y-4 overflow-y-auto rounded-lg border bg-gray-100 p-4 shadow-inner" style="background-image: radial-gradient(#d1d5db 1px, transparent 1px); background-size: 16px 16px;">
+    <!-- Messages will be loaded here by JavaScript -->
+    <div class="flex h-full items-center justify-center">
+      <div class="text-center text-gray-500">
+        <i data-lucide="loader-2" class="mx-auto h-8 w-8 animate-spin"></i>
+        <p>Loading messages...</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Message Input Form -->
+  <div class="mt-4">
+    <form id="send-message-form" class="flex items-center gap-3">
+      <input type="text" id="message-input" placeholder="Type a message..." autocomplete="off" required class="flex h-12 w-full rounded-md border border-gray-300 bg-white px-4 py-2 text-base focus:outline-none focus:ring-2 focus:ring-purple-500" />
+      <button type="submit" class="flex h-12 w-12 items-center justify-center rounded-md bg-purple-600 text-white transition-colors hover:bg-purple-700">
+        <i data-lucide="send" class="h-6 w-6"></i>
+      </button>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    class ChatRoom {
+        constructor(matchId, currentUserId, fetchUrl, sendUrl) {
+            this.matchId = matchId;
+            this.currentUserId = currentUserId;
+            this.messageList = document.getElementById('message-list');
+            this.messageForm = document.getElementById('send-message-form');
+            this.messageInput = document.getElementById('message-input');
+            this.fetchUrl = fetchUrl;
+            this.sendUrl = sendUrl;
+            this.submitButton = this.messageForm.querySelector('button[type="submit"]');
+            this.pollingInterval = null;
+
+            this.messageForm.addEventListener('submit', this.sendMessage.bind(this));
+        }
+
+        scrollToBottom() {
+            this.messageList.scrollTop = this.messageList.scrollHeight;
+        }
+
+        renderMessages(messages) {
+            this.messageList.innerHTML = ''; // Clear previous content
+            if (messages.length === 0) {
+                this.messageList.innerHTML = '<div class="text-center text-gray-400">No messages yet. Say hello!</div>';
+                return;
+            }
+
+            messages.forEach(msg => {
+                const isCurrentUser = msg.sender_id === this.currentUserId;
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `flex items-start gap-3 ${isCurrentUser ? 'justify-end' : 'justify-start'}`;
+                messageDiv.innerHTML = `
+                    <div class="max-w-xs rounded-xl px-4 py-2 shadow-md md:max-w-md ${isCurrentUser ? 'bg-purple-600 text-white' : 'bg-white text-gray-800'}">
+                        <p class="break-words">${msg.content}</p>
+                        <p class="mt-1 text-right text-xs ${isCurrentUser ? 'text-purple-200' : 'text-gray-500'}">${msg.timestamp}</p>
+                    </div>
+                `;
+                this.messageList.appendChild(messageDiv);
+            });
+            this.scrollToBottom();
+        }
+
+        setFormState(enabled) {
+            this.messageInput.disabled = !enabled;
+            this.submitButton.disabled = !enabled;
+        }
+
+        async fetchMessages() {
+            try {
+                const response = await fetch(this.fetchUrl);
+                if (!response.ok) {
+                    throw new Error(`Server responded with status: ${response.status}`);
+                }
+                const data = await response.json();
+                this.renderMessages(data.messages);
+                this.setFormState(true); // Enable form after successful fetch
+            } catch (error) {
+                console.error('Error fetching messages:', error);
+                this.messageList.innerHTML = '<div class="text-center text-red-500">Could not load messages. Please try again later.</div>';
+                this.setFormState(false); // Keep form disabled on error
+                if (this.pollingInterval) clearInterval(this.pollingInterval); // Stop polling on error
+            }
+        }
+
+        async sendMessage(event) {
+            event.preventDefault();
+            const content = this.messageInput.value.trim();
+            if (!content) return;
+
+            this.setFormState(false); // Disable form during send
+
+            try {
+                const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+                const response = await fetch(this.sendUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
+                    body: JSON.stringify({ content: content }),
+                });
+                if (!response.ok) throw new Error('Failed to send message');
+
+                this.messageInput.value = '';
+                await this.fetchMessages(); // Re-fetch immediately after sending
+            } catch (error) {
+                console.error('Error sending message:', error);
+                // Optionally show a "failed to send" message
+            } finally {
+                this.setFormState(true); // Re-enable form
+                this.messageInput.focus();
+            }
+        }
+
+        start() {
+            this.setFormState(false); // Disable form until initial fetch is complete
+            this.fetchMessages();
+            this.pollingInterval = setInterval(() => this.fetchMessages(), 5000);
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const chat = new ChatRoom(
+            {{ match.id }}, 
+            {{ request.user.id }},
+            "{% url 'core:fetch_messages' match.id %}",
+            "{% url 'core:send_message' match.id %}"
+        );
+        chat.start();
+    });
+</script>
+{% endblock %}

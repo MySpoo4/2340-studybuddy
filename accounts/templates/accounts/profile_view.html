@@ -10,7 +10,7 @@
         <h3 class="text-2xl font-semibold leading-none tracking-tight">{{ user.get_full_name|default:user.username }}</h3>
         <p class="text-sm text-gray-500">Your personal profile and study preferences.</p>
       </div>
-      <a href="{% url 'accounts.edit_profile' %}" class="inline-flex h-10 items-center justify-center rounded-md border border-gray-300 bg-white px-4 text-sm font-medium shadow-sm hover:bg-gray-100">
+      <a href="{% url 'accounts:edit_profile' %}" class="inline-flex h-10 items-center justify-center rounded-md border border-gray-300 bg-white px-4 text-sm font-medium shadow-sm hover:bg-gray-100">
         Edit Profile
       </a>
     </div>
@@ -29,6 +29,10 @@
           <div>
             <h4 class="text-sm font-medium text-gray-500">Year of Study</h4>
             <p class="text-base">{% if profile.year_of_study %}Year {{ profile.year_of_study }}{% else %}Not set{% endif %}</p>
+          </div>
+          <div>
+            <h4 class="text-sm font-medium text-gray-500">Search Radius</h4>
+            <p class="text-base">{{ profile.search_radius }} km</p>
           </div>
         </div>
 
@@ -58,6 +62,20 @@
             {% endfor %}
           </div>
         </div>
+
+        {% if profile.latitude and profile.longitude %}
+        <div>
+          <h4 class="text-sm font-medium text-gray-500">Location</h4>
+          {% if location_name %}
+            <p class="text-base">{{ location_name }}</p>
+          {% endif %}
+          <div class="mt-2 h-48 w-full overflow-hidden rounded-lg border">
+            <img 
+              src="https://static-maps.yandex.ru/1.x/?lang=en-US&ll={{ profile.longitude }},{{ profile.latitude }}&z=13&l=map&size=600,300&pt={{ profile.longitude }},{{ profile.latitude }},pm2rdl" 
+              alt="Map showing user location" class="h-full w-full object-cover" />
+          </div>
+        </div>
+        {% endif %}
       </div>
     </div>
   </div>

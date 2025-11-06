@@ -1,0 +1,19 @@
+<div class="relative w-full max-w-md transform rounded-2xl bg-white p-8 text-center transition-all">
+  {# Removed profile pictures as per user request #}
+
+  <div class="mt-8"> {# Adjusted margin-top after removing images #}
+    <h2 class="bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-4xl font-bold text-transparent">It's a Match!</h2>
+    <p class="mt-2 text-lg text-gray-600">You and {{ match_profile.user.get_full_name|default:match_profile.user.username }} have liked each other.</p>
+  </div>
+
+  <div class="mt-8 space-y-4">
+    <a href="#" class="inline-flex h-12 w-full items-center justify-center rounded-md bg-purple-600 px-6 text-lg font-semibold text-white transition-colors hover:bg-purple-700"> Send a Message </a>
+    <button id="close-match-popup" class="inline-flex h-12 w-full items-center justify-center rounded-md border border-gray-300 bg-white px-6 text-lg font-medium shadow-sm hover:bg-gray-100">Keep Swiping</button>
+  </div>
+
+  <div class="absolute -top-4 -right-4">
+    <button id="close-match-popup-icon" class="flex h-8 w-8 items-center justify-center rounded-full bg-gray-200 text-gray-600 hover:bg-gray-300">
+      <i data-lucide="x" class="h-5 w-5"></i>
+    </button>
+  </div>
+</div>

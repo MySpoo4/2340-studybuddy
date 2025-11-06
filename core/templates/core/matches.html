@@ -25,8 +25,10 @@
         {% with profile=data.profile %}
         <div class="rounded-lg border bg-white shadow-sm">
           <div class="p-6">
-            <div class="flex items-center gap-4 mb-4">
-              <img src="https://source.unsplash.com/random/100x100?portrait&sig={{ profile.user.id }}" alt="{{ profile.user.username }}'s profile picture" class="h-16 w-16 rounded-full object-cover" />
+            <div class="mb-4 flex items-center gap-4">
+              <div class="flex h-16 w-16 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-purple-200 to-pink-200">
+                <i data-lucide="user" class="h-8 w-8 text-purple-700"></i>
+              </div>
               <div>
                 <h3 class="text-xl font-semibold">{{ profile.user.get_full_name|default:profile.user.username }}</h3>
                 <p class="text-sm text-gray-500">{{ profile.major|default:"No major" }}</p>

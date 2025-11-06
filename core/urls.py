@@ -13,4 +13,10 @@ urlpatterns = [
     path("messages/<int:match_id>/", views.chat_room_view, name="chat_room"),
     path("api/messages/<int:match_id>/", views.fetch_messages_view, name="fetch_messages"),
     path("api/messages/<int:match_id>/send/", views.send_message_view, name="send_message"),
+    path("study-sessions/", views.study_sessions_list, name="study_sessions_list"),
+    path("study-sessions/create/", views.study_session_create, name="study_session_create"),
+    path("study-sessions/<int:session_id>/edit/", views.study_session_edit, name="study_session_edit"),
+    path("study-sessions/<int:session_id>/delete/", views.study_session_delete, name="study_session_delete"),
+    path("study-sessions/google-calendar/authorize/", views.google_calendar_authorize, name="google_calendar_authorize"),
+    path("study-sessions/google-calendar/callback/", views.google_calendar_callback, name="google_calendar_callback"),
 ]

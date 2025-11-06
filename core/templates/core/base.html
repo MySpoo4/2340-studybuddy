@@ -28,6 +28,10 @@
         <span class="sidebar-text whitespace-nowrap sidebar-collapsed:hidden">Messages</span>
         <span id="messages-notification-badge" class="hidden sidebar-text ml-auto rounded-full bg-red-500 px-2 py-0.5 text-xs font-bold text-white sidebar-collapsed:hidden"></span>
       </a>
+      <a href="{% url 'core:study_sessions_list' %}" class="flex h-10 items-center gap-3 rounded-lg px-3 text-gray-600 hover:bg-gray-100 {% if 'study-sessions' in request.path %}bg-purple-100 text-purple-700{% endif %} sidebar-collapsed:px-2">
+        <i data-lucide="calendar" class="h-5 w-5 flex-shrink-0"></i>
+        <span class="sidebar-text whitespace-nowrap sidebar-collapsed:hidden">Study Sessions</span>
+      </a>
       <a href="{% url 'accounts:profile' %}" class="flex h-10 items-center gap-3 rounded-lg px-3 text-gray-600 hover:bg-gray-100 {% if request.resolver_match.view_name == 'accounts:profile' %}bg-purple-100 text-purple-700{% endif %} sidebar-collapsed:px-2">
         <i data-lucide="user" class="h-5 w-5 flex-shrink-0"></i>
         <span class="sidebar-text whitespace-nowrap sidebar-collapsed:hidden">Profile</span>

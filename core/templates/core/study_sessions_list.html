@@ -1,0 +1,211 @@
+{% extends "core/base.html" %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+{% endblock %}
+
+{% block page_title %}Study Sessions{% endblock %}
+
+{% block page_content %}
+<div class="mx-auto max-w-6xl">
+  <div class="mb-6 flex items-center justify-between">
+    <h2 class="text-3xl font-bold text-gray-800">Study Sessions</h2>
+    <div class="flex gap-3">
+      {% if not has_google_calendar %}
+      <a href="{% url 'core:google_calendar_authorize' %}" class="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-gray-300 bg-white px-4 text-sm font-medium text-gray-700 hover:bg-gray-50">
+        <i data-lucide="calendar" class="h-4 w-4"></i>
+        Connect Google Calendar
+      </a>
+      {% endif %}
+      <a href="{% url 'core:study_session_create' %}" class="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-purple-600 px-4 text-sm font-medium text-white hover:bg-purple-700">
+        <i data-lucide="plus" class="h-4 w-4"></i>
+        Create Session
+      </a>
+    </div>
+  </div>
+
+  {% if has_google_calendar %}
+  <div class="mb-4 rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-800">
+    <div class="flex items-center gap-2">
+      <i data-lucide="check-circle" class="h-4 w-4"></i>
+      <span>Google Calendar is connected. Your sessions will sync automatically.</span>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Session Map -->
+  {% if created_sessions or participant_sessions %}
+  <div class="mb-8">
+    <h3 class="mb-4 text-xl font-semibold text-gray-700">Session Locations</h3>
+    <div id="sessions-map" class="h-96 w-full rounded-lg border bg-gray-200 shadow-sm"></div>
+  </div>
+  {% endif %}
+
+  <!-- Created Sessions -->
+  {% if created_sessions %}
+  <div class="mb-8">
+    <h3 class="mb-4 text-xl font-semibold text-gray-700">Sessions You Created</h3>
+    <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      {% for session in created_sessions %}
+      <div class="rounded-lg border bg-white shadow-sm session-card" {% if session.latitude and session.longitude %}data-lat="{{ session.latitude }}" data-lon="{{ session.longitude }}" data-title="{{ session.title }}" data-location="{{ session.location }}" data-time="{{ session.start_time|date:'M d, Y' }} at {{ session.start_time|time:'g:i A' }}"{% endif %}>
+        <div class="p-6">
+          <div class="mb-4 flex items-start justify-between">
+            <div class="flex-1">
+              <h4 class="text-lg font-semibold text-gray-800">{{ session.title }}</h4>
+              <p class="mt-1 text-sm text-gray-500">{{ session.start_time|date:"M d, Y" }} at {{ session.start_time|time:"g:i A" }}</p>
+            </div>
+            {% if session.google_calendar_event_id %}
+            <span class="inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-1 text-xs font-medium text-green-800">
+              <i data-lucide="calendar-check" class="h-3 w-3"></i>
+              Synced
+            </span>
+            {% endif %}
+          </div>
+
+          {% if session.description %}
+          <p class="mb-4 text-sm text-gray-600 line-clamp-2">{{ session.description }}</p>
+          {% endif %}
+
+          <div class="mb-4 space-y-2 text-sm text-gray-600">
+            <div class="flex items-center gap-2">
+              <i data-lucide="clock" class="h-4 w-4"></i>
+              <span>{{ session.start_time|time:"g:i A" }} - {{ session.end_time|time:"g:i A" }}</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <i data-lucide="map-pin" class="h-4 w-4"></i>
+              <span>{{ session.location }}</span>
+            </div>
+            {% if session.participants.count > 0 %}
+            <div class="flex items-center gap-2">
+              <i data-lucide="users" class="h-4 w-4"></i>
+              <span>{{ session.participants.count }} participant{{ session.participants.count|pluralize }}</span>
+            </div>
+            {% endif %}
+          </div>
+
+          <div class="flex gap-2">
+            <a href="{% url 'core:study_session_edit' session.id %}" class="flex-1 inline-flex h-9 items-center justify-center gap-2 rounded-md border border-gray-300 bg-white px-3 text-sm font-medium text-gray-700 hover:bg-gray-50">
+              <i data-lucide="edit" class="h-4 w-4"></i>
+              Edit
+            </a>
+            <a href="{% url 'core:study_session_delete' session.id %}" class="flex-1 inline-flex h-9 items-center justify-center gap-2 rounded-md border border-red-300 bg-white px-3 text-sm font-medium text-red-700 hover:bg-red-50">
+              <i data-lucide="trash-2" class="h-4 w-4"></i>
+              Delete
+            </a>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Participating Sessions -->
+  {% if participant_sessions %}
+  <div class="mb-8">
+    <h3 class="mb-4 text-xl font-semibold text-gray-700">Sessions You're Invited To</h3>
+    <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      {% for session in participant_sessions %}
+      <div class="rounded-lg border bg-white shadow-sm session-card" {% if session.latitude and session.longitude %}data-lat="{{ session.latitude }}" data-lon="{{ session.longitude }}" data-title="{{ session.title }}" data-location="{{ session.location }}" data-time="{{ session.start_time|date:'M d, Y' }} at {{ session.start_time|time:'g:i A' }}"{% endif %}>
+        <div class="p-6">
+          <div class="mb-4 flex items-start justify-between">
+            <div class="flex-1">
+              <h4 class="text-lg font-semibold text-gray-800">{{ session.title }}</h4>
+              <p class="mt-1 text-sm text-gray-500">Created by {{ session.creator.get_full_name|default:session.creator.username }}</p>
+              <p class="mt-1 text-sm text-gray-500">{{ session.start_time|date:"M d, Y" }} at {{ session.start_time|time:"g:i A" }}</p>
+            </div>
+            {% if session.google_calendar_event_id %}
+            <span class="inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-1 text-xs font-medium text-green-800">
+              <i data-lucide="calendar-check" class="h-3 w-3"></i>
+              Synced
+            </span>
+            {% endif %}
+          </div>
+
+          {% if session.description %}
+          <p class="mb-4 text-sm text-gray-600 line-clamp-2">{{ session.description }}</p>
+          {% endif %}
+
+          <div class="mb-4 space-y-2 text-sm text-gray-600">
+            <div class="flex items-center gap-2">
+              <i data-lucide="clock" class="h-4 w-4"></i>
+              <span>{{ session.start_time|time:"g:i A" }} - {{ session.end_time|time:"g:i A" }}</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <i data-lucide="map-pin" class="h-4 w-4"></i>
+              <span>{{ session.location }}</span>
+            </div>
+            {% if session.participants.count > 0 %}
+            <div class="flex items-center gap-2">
+              <i data-lucide="users" class="h-4 w-4"></i>
+              <span>{{ session.participants.count }} participant{{ session.participants.count|pluralize }}</span>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  {% if not created_sessions and not participant_sessions %}
+  <div class="text-center rounded-lg border bg-white shadow-sm py-12">
+    <i data-lucide="calendar-x" class="mb-4 h-16 w-16 text-gray-400 mx-auto"></i>
+    <p class="text-lg text-gray-600">You don't have any study sessions yet.</p>
+    <a href="{% url 'core:study_session_create' %}" class="mt-6 inline-flex h-10 items-center justify-center gap-2 rounded-md bg-purple-600 px-5 text-sm font-medium text-white hover:bg-purple-700">
+      <i data-lucide="plus" class="h-4 w-4"></i>
+      Create Your First Session
+    </a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const mapContainer = document.getElementById('sessions-map');
+    const sessionCards = document.querySelectorAll('.session-card[data-lat][data-lon]');
+
+    if (!mapContainer || sessionCards.length === 0) {
+      if (mapContainer) {
+        // Hide the map container and its parent title if no sessions have coordinates
+        mapContainer.parentElement.style.display = 'none';
+      }
+      return;
+    }
+
+    // Use the coordinates of the first session for the initial map view
+    const firstLat = parseFloat(sessionCards[0].dataset.lat);
+    const firstLon = parseFloat(sessionCards[0].dataset.lon);
+
+    const map = L.map('sessions-map').setView([firstLat, firstLon], 13);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(map);
+
+    const markers = [];
+
+    sessionCards.forEach(card => {
+      const lat = parseFloat(card.dataset.lat);
+      const lon = parseFloat(card.dataset.lon);
+      const title = card.dataset.title;
+      const location = card.dataset.location;
+      const time = card.dataset.time;
+
+      const popupContent = `<b>${title}</b><br>${location}<br><small>${time}</small>`;
+      const marker = L.marker([lat, lon]).addTo(map).bindPopup(popupContent);
+      markers.push(marker);
+    });
+
+    // Adjust map bounds to fit all markers
+    if (markers.length > 1) {
+      const group = new L.featureGroup(markers);
+      map.fitBounds(group.getBounds().pad(0.3));
+    }
+  });
+</script>
+{% endblock %}

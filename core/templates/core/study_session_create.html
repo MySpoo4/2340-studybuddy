@@ -1,0 +1,122 @@
+{% extends "core/base.html" %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+{% endblock %}
+
+{% block page_title %}Create Study Session{% endblock %}
+
+{% block page_content %}
+<div class="mx-auto max-w-2xl">
+  <div class="rounded-lg border bg-white shadow-sm">
+    <div class="p-6">
+      <h3 class="text-2xl font-semibold leading-none tracking-tight">Create Study Session</h3>
+      <p class="text-sm text-gray-500">Schedule a study session with your matches.</p>
+    </div>
+    <div class="p-6 pt-0">
+      <form method="post" action="{% url 'core:study_session_create' %}">
+        {% csrf_token %}
+        <div class="space-y-6">
+          <div class="space-y-2">
+            <label for="title" class="text-sm font-medium leading-none">Title <span class="text-red-500">*</span></label>
+            <input type="text" id="title" name="title" required placeholder="e.g., CS2340 Study Group" class="flex h-10 w-full rounded-md border border-gray-300 bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500" />
+          </div>
+
+          <div class="space-y-2">
+            <label for="description" class="text-sm font-medium leading-none">Description</label>
+            <textarea id="description" name="description" placeholder="What will you be studying?" rows="4" class="flex min-h-[80px] w-full rounded-md border border-gray-300 bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"></textarea>
+          </div>
+
+          <div class="grid gap-4 sm:grid-cols-2">
+            <div class="space-y-2">
+              <label for="start_time" class="text-sm font-medium leading-none">Start Time <span class="text-red-500">*</span></label>
+              <input type="datetime-local" id="start_time" name="start_time" required class="flex h-10 w-full rounded-md border border-gray-300 bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500" />
+            </div>
+
+            <div class="space-y-2">
+              <label for="end_time" class="text-sm font-medium leading-none">End Time <span class="text-red-500">*</span></label>
+              <input type="datetime-local" id="end_time" name="end_time" required class="flex h-10 w-full rounded-md border border-gray-300 bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500" />
+            </div>
+          </div>
+
+          <div class="space-y-2">
+            <label for="location" class="text-sm font-medium leading-none">Location <span class="text-red-500">*</span></label>
+            <input type="text" id="location" name="location" required placeholder="e.g., Library Room 201" class="flex h-10 w-full rounded-md border border-gray-300 bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500" />
+            <p class="text-xs text-gray-500">You can also click on the map below to set coordinates.</p>
+          </div>
+
+          <!-- Hidden fields for coordinates -->
+          <input type="hidden" name="latitude" id="latitude" value="">
+          <input type="hidden" name="longitude" id="longitude" value="">
+
+          <div class="space-y-2">
+            <label class="flex items-center gap-2 text-sm font-medium">
+              <i data-lucide="map-pin" class="h-4 w-4"></i>
+              Location on Map (Optional)
+            </label>
+            <div id="map" class="h-64 w-full rounded-md border"></div>
+            <div class="flex gap-2 mt-2">
+              <button type="button" id="use-current-location" class="inline-flex h-10 items-center justify-center gap-2 whitespace-nowrap rounded-md border border-gray-300 bg-transparent px-4 py-2 text-sm font-medium hover:bg-gray-100">
+                <i data-lucide="navigation" class="h-4 w-4"></i>
+                Use Current Location
+              </button>
+            </div>
+          </div>
+
+          {% if potential_participants %}
+          <div class="space-y-2">
+            <label class="text-sm font-medium leading-none">Invite Participants</label>
+            <div class="max-h-48 space-y-2 overflow-y-auto rounded-md border border-gray-300 p-3">
+              {% for participant in potential_participants %}
+              <label class="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-2 rounded">
+                <input type="checkbox" name="participants" value="{{ participant.id }}" class="rounded border-gray-300 text-purple-600 focus:ring-purple-500">
+                <span class="text-sm text-gray-700">{{ participant.get_full_name|default:participant.username }}</span>
+              </label>
+              {% endfor %}
+            </div>
+          </div>
+          {% else %}
+          <div class="rounded-lg border border-gray-200 bg-gray-50 p-4 text-sm text-gray-600">
+            <p>You don't have any matches yet. <a href="{% url 'core:swipe' %}" class="text-purple-600 hover:underline">Start swiping</a> to find study buddies!</p>
+          </div>
+          {% endif %}
+
+          {% if has_google_calendar %}
+          <div class="flex items-center gap-2 rounded-md border border-gray-300 bg-gray-50 p-4">
+            <input type="checkbox" id="sync_to_calendar" name="sync_to_calendar" checked class="rounded border-gray-300 text-purple-600 focus:ring-purple-500">
+            <label for="sync_to_calendar" class="text-sm font-medium text-gray-700 cursor-pointer">
+              Sync to Google Calendar
+            </label>
+          </div>
+          {% else %}
+          <div class="rounded-lg border border-yellow-200 bg-yellow-50 p-4 text-sm text-yellow-800">
+            <p class="mb-2">Connect Google Calendar to automatically sync your study sessions.</p>
+            <a href="{% url 'core:google_calendar_authorize' %}" class="inline-flex h-9 items-center justify-center gap-2 rounded-md bg-yellow-600 px-3 text-sm font-medium text-white hover:bg-yellow-700">
+              <i data-lucide="calendar" class="h-4 w-4"></i>
+              Connect Google Calendar
+            </a>
+          </div>
+          {% endif %}
+
+          <div class="flex gap-3">
+            <button type="submit" class="flex-1 inline-flex h-11 items-center justify-center rounded-md bg-purple-600 px-8 text-sm font-medium text-white hover:bg-purple-700">
+              Create Session
+            </button>
+            <a href="{% url 'core:study_sessions_list' %}" class="inline-flex h-11 items-center justify-center rounded-md border border-gray-300 bg-white px-6 text-sm font-medium text-gray-700 hover:bg-gray-50">
+              Cancel
+            </a>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script>
+  {% include 'accounts/map_script.js' %}
+</script>
+{% endblock %}
+

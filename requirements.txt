@@ -8,6 +8,10 @@ Django==5.0
 django-stubs==5.2.5
 django-stubs-ext==5.2.5
 dotenv==0.9.9
+google-api-python-client==2.150.0
+google-auth==2.35.0
+google-auth-httplib2==0.2.0
+google-auth-oauthlib==1.2.1
 googlemaps==4.10.0
 graphviz==0.21
 idna==3.11

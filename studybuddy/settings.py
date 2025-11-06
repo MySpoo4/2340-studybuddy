@@ -31,6 +31,14 @@ DEBUG = True
 
 ALLOWED_HOSTS = ["*"]
 
+# PythonAnywhere HTTPS settings
+# PythonAnywhere uses a proxy, so we need to trust proxy headers
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+# Set secure cookies for HTTPS
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = True
+# Don't force SSL redirect (PythonAnywhere handles this)
+SECURE_SSL_REDIRECT = False
 
 # Application definition
 

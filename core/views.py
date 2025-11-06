@@ -371,8 +371,8 @@ def send_message_view(request, match_id):
 
 # Google Calendar OAuth configuration
 SCOPES = ['https://www.googleapis.com/auth/calendar']
-BASE_URL = os.environ.get('GOOGLE_CALENDAR_BASE_URL', 'http://localhost:8000')
-REDIRECT_URI = os.environ.get('GOOGLE_CALENDAR_REDIRECT_URI', f'{BASE_URL}/app/study-sessions/google-calendar/callback/')
+BASE_URL = os.environ.get('GOOGLE_CALENDAR_BASE_URL', 'http://localhost:8000').rstrip('/')
+REDIRECT_URI = f'{BASE_URL}/app/study-sessions/google-calendar/callback/'
 CLIENT_ID = os.environ.get('GOOGLE_CALENDAR_CLIENT_ID', '')
 CLIENT_SECRET = os.environ.get('GOOGLE_CALENDAR_CLIENT_SECRET', '')
 # Allow insecure transport for localhost (set to '1' for development, '0' or unset for production)

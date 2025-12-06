@@ -122,6 +122,46 @@
             </div>
           </div>
 
+          <div class="space-y-4 border-t pt-6">
+            <h4 class="text-lg font-semibold leading-none tracking-tight">Privacy Settings</h4>
+            <p class="text-sm text-gray-500">Control who can see your profile information.</p>
+
+            <div class="grid gap-4 sm:grid-cols-2">
+              <div class="space-y-2">
+                <label for="academic_info_visibility" class="text-sm font-medium">Academic Info</label>
+                <select id="academic_info_visibility" name="academic_info_visibility" class="flex h-10 w-full items-center justify-between rounded-md border border-gray-300 bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500">
+                  <option value="public" {% if profile.academic_info_visibility == 'public' %}selected{% endif %}>Public</option>
+                  <option value="matches" {% if profile.academic_info_visibility == 'matches' %}selected{% endif %}>Matches Only</option>
+                  <option value="private" {% if profile.academic_info_visibility == 'private' %}selected{% endif %}>Private</option>
+                </select>
+              </div>
+              <div class="space-y-2">
+                <label for="bio_visibility" class="text-sm font-medium">Bio</label>
+                <select id="bio_visibility" name="bio_visibility" class="flex h-10 w-full items-center justify-between rounded-md border border-gray-300 bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500">
+                  <option value="public" {% if profile.bio_visibility == 'public' %}selected{% endif %}>Public</option>
+                  <option value="matches" {% if profile.bio_visibility == 'matches' %}selected{% endif %}>Matches Only</option>
+                  <option value="private" {% if profile.bio_visibility == 'private' %}selected{% endif %}>Private</option>
+                </select>
+              </div>
+              <div class="space-y-2">
+                <label for="courses_visibility" class="text-sm font-medium">Courses</label>
+                <select id="courses_visibility" name="courses_visibility" class="flex h-10 w-full items-center justify-between rounded-md border border-gray-300 bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500">
+                  <option value="public" {% if profile.courses_visibility == 'public' %}selected{% endif %}>Public</option>
+                  <option value="matches" {% if profile.courses_visibility == 'matches' %}selected{% endif %}>Matches Only</option>
+                  <option value="private" {% if profile.courses_visibility == 'private' %}selected{% endif %}>Private</option>
+                </select>
+              </div>
+              <div class="space-y-2">
+                <label for="location_visibility" class="text-sm font-medium">Location</label>
+                <select id="location_visibility" name="location_visibility" class="flex h-10 w-full items-center justify-between rounded-md border border-gray-300 bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500">
+                  <option value="public" {% if profile.location_visibility == 'public' %}selected{% endif %}>Public</option>
+                  <option value="matches" {% if profile.location_visibility == 'matches' %}selected{% endif %}>Matches Only</option>
+                  <option value="private" {% if profile.location_visibility == 'private' %}selected{% endif %}>Private</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
           <button type="submit" class="inline-flex h-11 w-full items-center justify-center rounded-md bg-purple-600 px-8 text-sm font-medium text-white hover:bg-purple-700">Save Changes</button>
         </div>
       </form>

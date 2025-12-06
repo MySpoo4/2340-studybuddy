@@ -17,6 +17,13 @@ class StudyPreference(models.Model):
     def __str__(self):
         return self.name
 
+VISIBILITY_CHOICES = [
+    ('public', 'Public - Visible to everyone'),
+    ('matches', 'Matches - Only visible to your matches'),
+    ('private', 'Private - Not visible to anyone'),
+]
+
+
 class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     university = models.CharField(max_length=255, blank=True)
@@ -32,6 +39,12 @@ class Profile(models.Model):
     google_calendar_refresh_token = models.TextField(blank=True, null=True)
     google_calendar_access_token = models.TextField(blank=True, null=True)
     google_calendar_token_expiry = models.DateTimeField(blank=True, null=True)
+
+    # Privacy Settings
+    academic_info_visibility = models.CharField(max_length=10, choices=VISIBILITY_CHOICES, default='public')
+    bio_visibility = models.CharField(max_length=10, choices=VISIBILITY_CHOICES, default='public')
+    courses_visibility = models.CharField(max_length=10, choices=VISIBILITY_CHOICES, default='public')
+    location_visibility = models.CharField(max_length=10, choices=VISIBILITY_CHOICES, default='public')
 
     def __str__(self):
         return f"{self.user.username}'s Profile"

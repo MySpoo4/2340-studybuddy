@@ -1,27 +1,25 @@
 {% extends "core/base.html" %}
 
-{% block page_title %}Your Profile{% endblock %}
+{% block page_title %}{{ profile.user.get_full_name|default:profile.user.username }}'s Profile{% endblock %}
 
 {% block page_content %}
 <div class="mx-auto max-w-2xl">
   <div class="rounded-lg border bg-white shadow-sm">
     <div class="flex items-center justify-between p-6">
       <div>
-        <h3 class="text-2xl font-semibold leading-none tracking-tight">{{ user.get_full_name|default:user.username }}</h3>
-        <p class="text-sm text-gray-500">Your personal profile and study preferences.</p>
+        <h3 class="text-2xl font-semibold leading-none tracking-tight">{{ profile.user.get_full_name|default:profile.user.username }}</h3>
+        {% if is_match %}
+          <span class="text-sm text-purple-600 font-medium">You are matched!</span>
+        {% endif %}
       </div>
-      <a href="{% url 'accounts:edit_profile' %}" class="inline-flex h-10 items-center justify-center rounded-md border border-gray-300 bg-white px-4 text-sm font-medium shadow-sm hover:bg-gray-100">
-        Edit Profile
-      </a>
+      <!-- Future actions like 'Send Message' could go here -->
     </div>
     <div class="p-6 pt-0">
       <div class="space-y-6">
-        
+
+        {% if profile.academic_info_visibility == 'public' or profile.academic_info_visibility == 'matches' and is_match %}
         <div>
-          <div class="flex items-center gap-2">
-            <h4 class="text-sm font-medium text-gray-500">Academic Info</h4>
-            <span class="text-xs text-gray-400">({{ profile.get_academic_info_visibility_display }})</span>
-          </div>
+          <h4 class="text-sm font-medium text-gray-500">Academic Info</h4>
           <div class="grid gap-4 sm:grid-cols-2 mt-1">
             <div>
               <h5 class="text-xs font-medium text-gray-400">University</h5>
@@ -35,26 +33,30 @@
               <h5 class="text-xs font-medium text-gray-400">Year of Study</h5>
               <p class="text-base">{% if profile.year_of_study %}Year {{ profile.year_of_study }}{% else %}Not set{% endif %}</p>
             </div>
-            <div>
-              <h5 class="text-xs font-medium text-gray-400">Search Radius</h5>
-              <p class="text-base">{{ profile.search_radius }} km</p>
-            </div>
           </div>
         </div>
-
+        {% else %}
         <div>
-          <div class="flex items-center gap-2">
-            <h4 class="text-sm font-medium text-gray-500">Bio</h4>
-            <span class="text-xs text-gray-400">({{ profile.get_bio_visibility_display }})</span>
-          </div>
+          <h4 class="text-sm font-medium text-gray-500">Academic Info</h4>
+          <p class="text-sm text-gray-500 italic mt-1">This information is private.</p>
+        </div>
+        {% endif %}
+
+        {% if profile.bio_visibility == 'public' or profile.bio_visibility == 'matches' and is_match %}
+        <div>
+          <h4 class="text-sm font-medium text-gray-500">Bio</h4>
           <p class="text-base">{{ profile.bio|default:"No bio yet." }}</p>
         </div>
-
+        {% else %}
         <div>
-          <div class="flex items-center gap-2">
-            <h4 class="text-sm font-medium text-gray-500">Courses</h4>
-            <span class="text-xs text-gray-400">({{ profile.get_courses_visibility_display }})</span>
-          </div>
+          <h4 class="text-sm font-medium text-gray-500">Bio</h4>
+          <p class="text-sm text-gray-500 italic mt-1">This information is private.</p>
+        </div>
+        {% endif %}
+
+        {% if profile.courses_visibility == 'public' or profile.courses_visibility == 'matches' and is_match %}
+        <div>
+          <h4 class="text-sm font-medium text-gray-500">Courses</h4>
           <div class="mt-2 flex flex-wrap gap-2">
             {% for course in profile.courses.all %}
               <span class="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-semibold">{{ course.code }}</span>
@@ -63,10 +65,15 @@
             {% endfor %}
           </div>
         </div>
+        {% else %}
+        <div>
+          <h4 class="text-sm font-medium text-gray-500">Courses</h4>
+          <p class="text-sm text-gray-500 italic mt-1">This information is private.</p>
+        </div>
+        {% endif %}
 
         <div>
           <h4 class="text-sm font-medium text-gray-500">Study Preferences</h4>
-          <p class="text-xs text-gray-400">Study preferences are always public to help with matching.</p>
           <div class="mt-2 flex flex-wrap gap-2">
             {% for pref in profile.study_preferences.all %}
               <span class="inline-flex items-center rounded-full bg-purple-100 px-3 py-1 text-sm font-medium text-purple-700">{{ pref.name }}</span>
@@ -76,24 +83,21 @@
           </div>
         </div>
 
+        {% if profile.location_visibility == 'public' or profile.location_visibility == 'matches' and is_match %}
         <div>
-          <div class="flex items-center gap-2">
-            <h4 class="text-sm font-medium text-gray-500">Location</h4>
-            <span class="text-xs text-gray-400">({{ profile.get_location_visibility_display }})</span>
-          </div>
+          <h4 class="text-sm font-medium text-gray-500">Location</h4>
           {% if profile.latitude and profile.longitude %}
             {% if location_name %}
               <p class="text-base">{{ location_name }}</p>
             {% endif %}
             <div class="mt-2 h-48 w-full overflow-hidden rounded-lg border">
-              <img 
-                src="https://static-maps.yandex.ru/1.x/?lang=en-US&ll={{ profile.longitude }},{{ profile.latitude }}&z=13&l=map&size=600,300&pt={{ profile.longitude }},{{ profile.latitude }},pm2rdl" 
-                alt="Map showing user location" class="h-full w-full object-cover" />
+              <img src="https://static-maps.yandex.ru/1.x/?lang=en-US&ll={{ profile.longitude }},{{ profile.latitude }}&z=13&l=map&size=600,300&pt={{ profile.longitude }},{{ profile.latitude }},pm2rdl" alt="Map showing user location" class="h-full w-full object-cover" />
             </div>
           {% else %}
             <p class="text-sm text-gray-500">No location set.</p>
           {% endif %}
         </div>
+        {% endif %}
       </div>
     </div>
   </div>

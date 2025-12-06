@@ -109,5 +109,63 @@ def suspend_user(request, user_id):
                     report.save()
                 except Report.DoesNotExist:
                     pass # Report might have been deleted, fail silently
-        return redirect('administration:report_detail', report_id=report_id)
+        
+        # Redirect back to the appropriate page
+        if report_id:
+            return redirect('administration:report_detail', report_id=report_id)
+        return redirect('administration:user_detail', user_id=user_id)
     return redirect('administration:dashboard')
+
+@user_passes_test(is_staff)
+def reactivate_user(request, user_id):
+    """
+    Reactivates a suspended user by setting their account to active.
+    """
+    if request.method == 'POST':
+        user_to_reactivate = get_object_or_404(User, id=user_id)
+        user_to_reactivate.is_active = True
+        user_to_reactivate.save()
+        messages.success(request, f"User '{user_to_reactivate.username}' has been reactivated.")
+        return redirect('administration:user_detail', user_id=user_id)
+    return redirect('administration:dashboard')
+
+@user_passes_test(is_staff)
+def user_list(request):
+    """
+    Lists all users with search and filtering.
+    """
+    query = request.GET.get('q', '')
+    status_filter = request.GET.get('status', 'all')
+
+    users = User.objects.all().order_by('username')
+
+    if query:
+        users = users.filter(Q(username__icontains=query) | Q(email__icontains=query))
+
+    if status_filter == 'active':
+        users = users.filter(is_active=True)
+    elif status_filter == 'suspended':
+        users = users.filter(is_active=False)
+
+    context = {
+        'users': users,
+        'query': query,
+        'status_filter': status_filter,
+        'is_admin_panel': True,
+    }
+    return render(request, 'administration/user_list.html', context)
+
+@user_passes_test(is_staff)
+def user_detail(request, user_id):
+    """
+    Displays details for a specific user and their report history.
+    """
+    user = get_object_or_404(User, id=user_id)
+    reports_against_user = Report.objects.filter(reported_user=user).select_related('reporter')
+
+    context = {
+        'managed_user': user,
+        'reports_against_user': reports_against_user,
+        'is_admin_panel': True,
+    }
+    return render(request, 'administration/user_detail.html', context)

@@ -1,0 +1,86 @@
+{% extends "administration/base_admin.html" %}
+
+{% block page_title %}Manage User: {{ managed_user.username }}{% endblock %}
+
+{% block admin_content %}
+<div class="flex items-center justify-between mb-6">
+  <div>
+    <h1 class="text-3xl font-bold text-gray-800">Manage User</h1>
+    <p class="text-sm text-gray-500">{{ managed_user.username }}</p>
+  </div>
+  <a href="{% url 'administration:user_list' %}" class="inline-flex items-center gap-2 rounded-md border bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-100">
+    <i data-lucide="arrow-left" class="h-4 w-4"></i>
+    Back to User List
+  </a>
+</div>
+
+<div class="mx-auto max-w-4xl space-y-6">
+  <!-- User Info & Actions -->
+  <div class="rounded-lg border bg-white p-6 shadow-sm">
+    <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between">
+      <div class="flex items-center gap-4">
+        <div class="flex h-16 w-16 flex-shrink-0 items-center justify-center rounded-full {% if managed_user.is_active %}bg-blue-100 text-blue-700{% else %}bg-gray-200 text-gray-600{% endif %} text-2xl font-bold">
+          {{ managed_user.username|first|upper }}
+        </div>
+        <div>
+          <h2 class="text-xl font-bold text-gray-900">{{ managed_user.get_full_name|default:managed_user.username }}</h2>
+          <p class="text-sm text-gray-500">{{ managed_user.email }}</p>
+          <p class="text-sm text-gray-500">Joined: {{ managed_user.date_joined|date:"F j, Y" }}</p>
+        </div>
+      </div>
+      <div class="mt-4 sm:mt-0 flex-shrink-0">
+        <a href="{% url 'accounts:view_profile' managed_user.username %}" target="_blank" class="inline-flex items-center gap-2 rounded-md bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm border hover:bg-gray-50">
+          View Public Profile
+        </a>
+      </div>
+    </div>
+    <div class="mt-6 border-t pt-6">
+      {% if managed_user.is_active %}
+        <div class="rounded-lg border border-red-300 bg-red-50 p-4">
+          <h3 class="font-semibold text-red-800">Suspend User Account</h3>
+          <p class="text-sm text-red-700 mt-1 mb-3">This will deactivate the user's account and prevent them from logging in.</p>
+          <form action="{% url 'administration:suspend_user' managed_user.id %}" method="post">
+            {% csrf_token %}
+            <button type="submit" class="inline-flex items-center gap-2 rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-red-700">
+              <i data-lucide="user-x" class="h-4 w-4"></i>
+              Suspend {{ managed_user.username }}
+            </button>
+          </form>
+        </div>
+      {% else %}
+        <div class="rounded-lg border border-green-300 bg-green-50 p-4">
+          <h3 class="font-semibold text-green-800">Reactivate User Account</h3>
+          <p class="text-sm text-green-700 mt-1 mb-3">This will allow the user to log in and use the application again.</p>
+          <form action="{% url 'administration:reactivate_user' managed_user.id %}" method="post">
+            {% csrf_token %}
+            <button type="submit" class="inline-flex items-center gap-2 rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-green-700">
+              <i data-lucide="user-check" class="h-4 w-4"></i>
+              Reactivate {{ managed_user.username }}
+            </button>
+          </form>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Report History -->
+  <div class="rounded-lg border bg-white p-6 shadow-sm">
+    <h3 class="text-lg font-semibold text-gray-800 mb-4">Report History ({{ reports_against_user.count }})</h3>
+    <div class="space-y-4">
+      {% for report in reports_against_user %}
+        <div class="rounded-md border p-3">
+          <div class="flex items-center justify-between">
+            <p class="text-sm text-gray-500">
+              Reported by <span class="font-medium text-gray-700">{{ report.reporter.username }}</span> on {{ report.timestamp|date:"M d, Y" }}
+            </p>
+            <a href="{% url 'administration:report_detail' report.id %}" class="text-xs text-purple-600 hover:underline">View Report</a>
+          </div>
+          <p class="mt-2 text-sm text-gray-800 bg-gray-50 p-2 rounded">{{ report.reason|truncatechars:200 }}</p>
+        </div>
+      {% empty %}
+        <p class="text-sm text-gray-500">This user has no reports against them.</p>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -5,42 +5,59 @@
 {% block admin_content %}
 <h1 class="text-3xl font-bold text-gray-800 mb-6">Dashboard</h1>
 
-<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
   <!-- Total Users -->
   <div class="rounded-lg border bg-white p-6 shadow-sm">
     <div class="flex items-center justify-between">
       <h3 class="text-sm font-medium text-gray-500">Total Users</h3>
-      <i data-lucide="users" class="h-6 w-6 text-gray-400"></i>
+      <i data-lucide="users" class="h-5 w-5 text-gray-400"></i>
     </div>
     <p class="mt-2 text-3xl font-bold">{{ total_users }}</p>
   </div>
 
   <!-- Signups -->
   <div class="rounded-lg border bg-white p-6 shadow-sm">
-    <h3 class="text-sm font-medium text-gray-500">New Signups</h3>
+    <div class="flex items-center justify-between">
+      <h3 class="text-sm font-medium text-gray-500">New Signups</h3>
+      <i data-lucide="user-plus" class="h-5 w-5 text-gray-400"></i>
+    </div>
     <p class="mt-2 text-3xl font-bold">{{ signups_today }} <span class="text-base font-normal text-gray-500">today</span></p>
     <p class="text-sm text-gray-500">{{ signups_last_7_days }} in the last 7 days</p>
   </div>
 
   <!-- Active Users -->
   <div class="rounded-lg border bg-white p-6 shadow-sm">
-    <h3 class="text-sm font-medium text-gray-500">Active Sessions</h3>
+    <div class="flex items-center justify-between">
+      <h3 class="text-sm font-medium text-gray-500">Active Sessions</h3>
+      <i data-lucide="activity" class="h-5 w-5 text-gray-400"></i>
+    </div>
     <p class="mt-2 text-3xl font-bold">{{ active_sessions }}</p>
     <p class="text-sm text-gray-500">Users active in last 30 mins</p>
   </div>
 
   <!-- Pending Reports -->
   <div class="rounded-lg border bg-white p-6 shadow-sm">
-    <h3 class="text-sm font-medium text-gray-500">Pending Reports</h3>
+    <div class="flex items-center justify-between">
+      <h3 class="text-sm font-medium text-gray-500">Pending Reports</h3>
+      <i data-lucide="flag" class="h-5 w-5 text-gray-400"></i>
+    </div>
     <p class="mt-2 text-3xl font-bold">{{ pending_reports_count }}</p>
     <a href="{% url 'administration:report_list' %}" class="text-sm text-purple-600 hover:underline">View Reports</a>
   </div>
 
   <!-- Total Matches -->
   <div class="rounded-lg border bg-white p-6 shadow-sm">
-    <h3 class="text-sm font-medium text-gray-500">Total Matches Made</h3>
+    <div class="flex items-center justify-between">
+      <h3 class="text-sm font-medium text-gray-500">Total Matches Made</h3>
+      <i data-lucide="heart-handshake" class="h-5 w-5 text-gray-400"></i>
+    </div>
     <p class="mt-2 text-3xl font-bold">{{ matches_count }}</p>
     <p class="text-sm text-gray-500">Reciprocal likes</p>
+  </div>
+
+  <!-- Placeholder for another stat -->
+  <div class="rounded-lg border border-dashed bg-gray-50 flex items-center justify-center">
+    <p class="text-sm text-gray-400">Future stat card</p>
   </div>
 </div>
 {% endblock %}

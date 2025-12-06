@@ -14,6 +14,10 @@
         <i data-lucide="flag" class="h-4 w-4"></i>
         <span>Reports</span>
       </a>
+      <a href="{% url 'administration:user_list' %}" class="flex items-center gap-2 rounded-md px-3 py-2 text-gray-700 hover:bg-gray-200 {% if 'user' in request.resolver_match.url_name %}bg-gray-200 font-semibold{% endif %}">
+        <i data-lucide="users" class="h-4 w-4"></i>
+        <span>Users</span>
+      </a>
       <!-- Add other admin links here -->
     </nav>
   </aside>

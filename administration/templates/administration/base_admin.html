@@ -1,0 +1,33 @@
+{% extends "core/base.html" %}
+
+{% block page_content %}
+<div class="flex">
+  <!-- Admin Sidebar -->
+  <aside class="w-64 flex-shrink-0 border-r bg-gray-50 p-4">
+    <h2 class="text-lg font-semibold text-gray-800 mb-4">Admin Panel</h2>
+    <nav class="flex flex-col space-y-2">
+      <a href="{% url 'administration:dashboard' %}" class="flex items-center gap-2 rounded-md px-3 py-2 text-gray-700 hover:bg-gray-200 {% if request.resolver_match.url_name == 'dashboard' %}bg-gray-200 font-semibold{% endif %}">
+        <i data-lucide="layout-dashboard" class="h-4 w-4"></i>
+        <span>Dashboard</span>
+      </a>
+      <a href="{% url 'administration:report_list' %}" class="flex items-center gap-2 rounded-md px-3 py-2 text-gray-700 hover:bg-gray-200 {% if 'report' in request.resolver_match.url_name %}bg-gray-200 font-semibold{% endif %}">
+        <i data-lucide="flag" class="h-4 w-4"></i>
+        <span>Reports</span>
+      </a>
+      <!-- Add other admin links here -->
+    </nav>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="flex-1 p-6 overflow-x-auto min-w-0">
+    {% if messages %}
+      {% for message in messages %}
+        <div class="mb-4 rounded-md p-4 text-sm {% if message.tags == 'success' %}bg-green-100 text-green-800{% elif message.tags == 'error' %}bg-red-100 text-red-800{% else %}bg-blue-100 text-blue-800{% endif %}">
+          {{ message }}
+        </div>
+      {% endfor %}
+    {% endif %}
+    {% block admin_content %}{% endblock %}
+  </main>
+</div>
+{% endblock %}

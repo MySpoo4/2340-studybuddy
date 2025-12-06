@@ -12,7 +12,9 @@
           <span class="text-sm text-purple-600 font-medium">You are matched!</span>
         {% endif %}
       </div>
-      <!-- Future actions like 'Send Message' could go here -->
+      <a href="{% url 'accounts:report_user' username=profile.user.username %}" class="inline-flex items-center gap-2 rounded-md border border-red-300 bg-white px-3 py-1.5 text-xs font-medium text-red-600 shadow-sm hover:bg-red-50">
+        <i data-lucide="flag" class="h-4 w-4"></i> Report User
+      </a>
     </div>
     <div class="p-6 pt-0">
       <div class="space-y-6">

@@ -6,6 +6,7 @@ from django.contrib import messages
 from django.contrib.auth.models import User
 from .models import Profile, Course, StudyPreference
 from core.models import Match
+from administration.models import Report
 import requests
 
 
@@ -161,3 +162,25 @@ def view_profile(request, username):
 
     context = {'profile': profile, 'is_match': is_match, 'location_name': location_name}
     return render(request, 'accounts/public_profile.html', context)
+
+@login_required
+def report_user(request, username):
+    """
+    Allows a user to report another user.
+    """
+    reported_user = get_object_or_404(User, username=username)
+    if request.method == 'POST':
+        reason = request.POST.get('reason')
+        if reason:
+            Report.objects.create(
+                reporter=request.user,
+                reported_user=reported_user,
+                reason=reason
+            )
+            messages.success(request, f"Your report against {username} has been submitted. Thank you for helping keep our community safe.")
+            return redirect('accounts:view_profile', username=username)
+        else:
+            messages.error(request, "A reason is required to submit a report.")
+
+    context = {'reported_user': reported_user}
+    return render(request, 'accounts/report_user.html', context)

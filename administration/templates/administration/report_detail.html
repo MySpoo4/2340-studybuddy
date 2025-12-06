@@ -1,0 +1,105 @@
+{% extends "administration/base_admin.html" %}
+
+{% block page_title %}Report #{{ report.id }}{% endblock %}
+
+{% block admin_content %}
+<div class="flex items-center justify-between mb-6">
+  <div>
+    <h1 class="text-3xl font-bold text-gray-800">Report #{{ report.id }}</h1>
+    <p class="text-sm text-gray-500">Submitted on {{ report.timestamp|date:"F j, Y, P" }}</p>
+  </div>
+  <a href="{% url 'administration:report_list' %}" class="inline-flex items-center gap-2 rounded-md border bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-100">
+    <i data-lucide="arrow-left" class="h-4 w-4"></i>
+    Back to Reports
+  </a>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+  <!-- Report Details -->
+  <div class="lg:col-span-2 space-y-6">
+    <!-- User Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div class="space-y-4">
+      <!-- Reported User Card -->
+      <div class="rounded-lg border bg-red-50 p-4">
+        <p class="text-xs font-semibold uppercase tracking-wider text-red-600">Reported User</p>
+        <div class="mt-2 flex items-center gap-3">
+          <div class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-red-200 font-bold text-red-700">
+            {{ report.reported_user.username|first|upper }}
+          </div>
+          <div>
+            <p class="font-semibold text-gray-900">{{ report.reported_user.username }}</p>
+            <a href="{% url 'accounts:view_profile' report.reported_user.username %}" target="_blank" class="text-sm text-purple-600 hover:underline">View Profile</a>
+          </div>
+        </div>
+      </div>
+      <!-- Reporter Card -->
+      <div class="rounded-lg border bg-gray-50 p-4">
+        <p class="text-xs font-semibold uppercase tracking-wider text-gray-500">Reporter</p>
+        <div class="mt-2 flex items-center gap-3">
+          <div class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-gray-200 font-bold text-gray-700">
+            {{ report.reporter.username|first|upper }}
+          </div>
+          <div>
+            <p class="font-semibold text-gray-900">{{ report.reporter.username }}</p>
+            <p class="text-sm text-gray-500">No action available</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Reason for Report -->
+    <div class="rounded-lg border bg-white p-6 shadow-sm">
+      <h3 class="font-semibold text-lg mb-2">Reason for Report</h3>
+      <div class="prose prose-sm max-w-none text-gray-700">
+        <p class="whitespace-pre-wrap">{{ report.reason }}</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Admin Actions -->
+  <div class="space-y-6">
+    <div class="rounded-lg border bg-white p-6 shadow-sm">
+      <h3 class="font-semibold text-lg mb-4">Manage Report</h3>
+      <form method="post" action="{% url 'administration:report_detail' report.id %}">
+        {% csrf_token %}
+        <div class="space-y-4">
+          <div>
+            <label for="status" class="block text-sm font-medium text-gray-700">Update Status</label>
+            <select id="status" name="status" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500 sm:text-sm">
+              {% for value, display in report.STATUS_CHOICES %}
+              <option value="{{ value }}" {% if report.status == value %}selected{% endif %}>{{ display|title }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div>
+            <label for="admin_notes" class="block text-sm font-medium text-gray-700">Admin Notes</label>
+            <textarea id="admin_notes" name="admin_notes" rows="4" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500 sm:text-sm" placeholder="Internal notes about this report...">{{ report.admin_notes|default:'' }}</textarea>
+          </div>
+          <button type="submit" class="w-full inline-flex justify-center rounded-md border border-transparent bg-purple-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-purple-700">Save Changes</button>
+        </div>
+      </form>
+    </div>
+
+    <div class="rounded-lg border border-red-300 bg-red-50 p-6 shadow-sm">
+      <h3 class="font-semibold text-lg text-red-800 mb-2">Danger Zone</h3>
+      <p class="text-sm text-red-700 mb-4">This will deactivate the user's account and prevent them from logging in. This action is irreversible from this panel.</p>
+      <button type="button" onclick="confirmSuspension()" class="w-full inline-flex justify-center rounded-md border border-transparent bg-red-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-red-700">
+        Suspend {{ report.reported_user.username }}
+      </button>
+      <form id="suspend-form" action="{% url 'administration:suspend_user' report.reported_user.id %}" method="post" class="hidden">
+        {% csrf_token %}
+        <input type="hidden" name="report_id" value="{{ report.id }}">
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+function confirmSuspension() {
+  if (confirm("Are you sure you want to suspend the user '{{ report.reported_user.username|escapejs }}'? This action cannot be undone from this panel.")) {
+    document.getElementById('suspend-form').submit();
+  }
+}
+</script>
+{% endblock %}

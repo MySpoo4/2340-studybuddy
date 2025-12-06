@@ -38,6 +38,15 @@
       </a>
     </nav>
 
+    {% if user.is_staff %}
+    <div class="border-t p-2 sidebar-collapsed:p-3">
+        <a href="{% url 'administration:dashboard' %}" class="flex h-10 items-center gap-3 rounded-lg px-3 text-gray-600 hover:bg-gray-100 {% if 'administration' in request.resolver_match.namespace %}bg-purple-100 text-purple-700{% endif %} sidebar-collapsed:px-2">
+            <i data-lucide="shield" class="h-5 w-5 flex-shrink-0"></i>
+            <span class="sidebar-text whitespace-nowrap sidebar-collapsed:hidden">Admin Panel</span>
+        </a>
+    </div>
+    {% endif %}
+
     <div class="border-t p-2 sidebar-collapsed:p-3">
       <form action="{% url 'accounts:logout' %}" method="post">
         {% csrf_token %}
@@ -50,7 +59,7 @@
   </aside>
 
   <!-- Main Content -->
-  <div class="flex flex-1 flex-col">
+  <div class="flex flex-1 flex-col min-w-0">
     <!-- Header -->
     <header class="flex h-14 items-center gap-4 border-b bg-white px-6">
       <button id="sidebar-toggle" class="rounded-full p-1 text-gray-600 hover:bg-gray-100">

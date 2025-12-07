@@ -17,6 +17,7 @@ urlpatterns = [
     path("study-sessions/create/", views.study_session_create, name="study_session_create"),
     path("study-sessions/<int:session_id>/edit/", views.study_session_edit, name="study_session_edit"),
     path("study-sessions/<int:session_id>/delete/", views.study_session_delete, name="study_session_delete"),
+    path("study-sessions/<int:session_id>/feedback/", views.leave_study_session_feedback, name="leave_study_session_feedback"),
     path("study-sessions/google-calendar/authorize/", views.google_calendar_authorize, name="google_calendar_authorize"),
     path("study-sessions/google-calendar/callback/", views.google_calendar_callback, name="google_calendar_callback"),
 ]

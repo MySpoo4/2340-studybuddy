@@ -9,7 +9,7 @@ from django.template.loader import render_to_string
 from django.contrib import messages
 from django.utils import timezone
 from django.conf import settings
-from .models import Swipe, Match, Message, StudySession
+from .models import Swipe, Match, Message, StudySession, StudySessionFeedback
 from accounts.models import Profile
 
 import json
@@ -21,6 +21,8 @@ from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import Flow
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
+
+from django.views.decorators.http import require_POST
 
 
 # Create your views here.
@@ -421,6 +423,8 @@ def study_sessions_list(request):
         'created_sessions': created_sessions,
         'participant_sessions': participant_sessions,
         'has_google_calendar': has_google_calendar,
+        'now': timezone.now(),
+        'user': current_user,
     }
     return render(request, 'core/study_sessions_list.html', context)
 
@@ -830,3 +834,39 @@ def delete_google_calendar_event(session, profile):
     except HttpError as error:
         print(f'An error occurred: {error}')
         return False
+
+
+@login_required
+@require_POST
+def leave_study_session_feedback(request, session_id):
+    session = get_object_or_404(StudySession, id=session_id)
+    user = request.user
+
+    # Participant check: must be in session or be creator
+    if user != session.creator and not session.participants.filter(id=user.id).exists():
+        messages.error(request, "You are not allowed to rate this session.")
+        return redirect('core:study_sessions_list')
+
+    # Check if session already ended
+    if session.end_time > timezone.now():
+        messages.error(request, "You can only rate a session after it ends.")
+        return redirect('core:study_sessions_list')
+
+    # Have they already rated?
+    if StudySessionFeedback.objects.filter(session=session, user=user).exists():
+        messages.info(request, "You've already left feedback for this session.")
+        return redirect('core:study_sessions_list')
+
+    rating = int(request.POST.get('rating', 0))
+    feedback = request.POST.get('feedback', '').strip()
+    if not (1 <= rating <= 5):
+        messages.error(request, "Invalid rating. Please rate from 1-5.")
+        return redirect('core:study_sessions_list')
+    StudySessionFeedback.objects.create(
+        session=session,
+        user=user,
+        rating=rating,
+        feedback=feedback
+    )
+    messages.success(request, "Thank you for your feedback!")
+    return redirect('core:study_sessions_list')

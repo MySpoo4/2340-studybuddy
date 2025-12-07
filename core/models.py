@@ -71,3 +71,18 @@ class StudySession(models.Model):
 
     def __str__(self):
         return f"{self.title} - {self.start_time.strftime('%Y-%m-%d %H:%M')}"
+
+
+class StudySessionFeedback(models.Model):
+    session = models.ForeignKey(StudySession, on_delete=models.CASCADE, related_name='feedbacks')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='session_feedbacks')
+    rating = models.PositiveSmallIntegerField()  # 1 to 5, for example
+    feedback = models.TextField(max_length=500, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ("session", "user")
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.user.username} rated {self.session.title} ({self.rating})"
